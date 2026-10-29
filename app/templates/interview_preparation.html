@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Preparation: {{ interview.candidate_name }} - Viraya Company{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="{{ url_for('dashboard.index') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        ← Back to Dashboard
+      </a>
+      <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main);">
+        Interview Preparation & Plan
+      </h1>
+      <p style="color: var(--text-secondary);">
+        Candidate: <b>{{ interview.candidate_name }}</b> • Role: <b>{{ interview.job_title }}</b> • Viraya Company
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      {% if interview.status in ('prepared', 'in_progress') %}
+        <a href="{{ url_for('interviews.live_interview', interview_id=interview.id) }}" class="btn btn-primary btn-lg">
+          Start Live Voice Interview →
+        </a>
+      {% else %}
+        <button id="retryPlanBtn" class="btn btn-primary">
+          Generate Interview Plan
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if interview.error_message %}
+    <div class="config-banner" style="background: #fef2f2; border-color: #fecaca; color: #991b1b; margin-bottom: 1.5rem;">
+      <span style="font-size: 1.25rem;">⚠️</span>
+      <div>
+        <b>Notice:</b> {{ interview.error_message }}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Role & Target Title Confirmation Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">🎯 Target Position & Role Confirmation</h2>
+      <span class="badge {{ interview.status|status_badge_class }}">
+        {{ interview.status.replace('_', ' ') }}
+      </span>
+    </div>
+
+    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 280px;">
+        <label class="form-label" for="editJobTitle">Role Title</label>
+        <input type="text" id="editJobTitle" class="form-input" value="{{ interview.job_title }}">
+      </div>
+      <button type="button" id="updateTitleBtn" class="btn btn-secondary">
+        Save Title Change
+      </button>
+    </div>
+
+    {% if plan.responsibilities %}
+      <div style="margin-top: 1.5rem;">
+        <h4 style="font-size: 0.925rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.6rem;">Key Role Responsibilities:</h4>
+        <ul style="list-style-type: disc; padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+          {% for resp in plan.responsibilities %}
+            <li>{{ resp }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- JD Requirements & Candidate Background Alignment -->
+  {% if plan.company_requirements_summary or plan.candidate_summary or plan.candidate_projects or plan.candidate_studies %}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Employer Requirements from JD -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h2 class="card-title" style="color: var(--primary);">
+          🏢 Target Requirements (from JD)
+        </h2>
+      </div>
+      {% if plan.company_requirements_summary %}
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; white-space: pre-line;">
+          {{ plan.company_requirements_summary }}
+        </p>
+      {% else %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Requirements derived from target role.</p>
+      {% endif %}
+    </div>
+
+    <!-- Candidate Profile & Projects from Resume -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h2 class="card-title" style="color: var(--indigo);">
+          👤 Candidate Projects & Studies (Resume)
+        </h2>
+      </div>
+      {% if plan.candidate_summary %}
+        <p style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; margin-bottom: 0.75rem; line-height: 1.5;">
+          {{ plan.candidate_summary }}
+        </p>
+      {% endif %}
+      {% if plan.candidate_studies %}
+        <div style="margin-bottom: 0.6rem;">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">🎓 Studies & Education:</span>
+          <ul style="list-style: none; padding-left: 0; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 0.25rem;">
+            {% for study in plan.candidate_studies %}
+              <li style="font-size: 0.85rem; color: var(--text-secondary);">• {{ study }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if plan.candidate_projects %}
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">🚀 Key Projects:</span>
+          <ul style="list-style: none; padding-left: 0; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 0.25rem;">
+            {% for proj in plan.candidate_projects %}
+              <li style="font-size: 0.85rem; color: var(--text-secondary);">• {{ proj }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Competencies & Skill Gaps Comparison Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Demonstrated Skills in Resume -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h2 class="card-title" style="color: var(--success);">
+          ✓ Verified Resume Skills
+        </h2>
+      </div>
+      {% if plan.resume_skills_found %}
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+          {% for skill in plan.resume_skills_found %}
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-main);">
+              <span style="color: var(--success); font-weight: bold;">✓</span>
+              <span>{{ skill }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Skills will be listed once planning is generated.</p>
+      {% endif %}
+    </div>
+
+    <!-- Potential Skill Gaps -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h2 class="card-title" style="color: #b45309;">
+          ⚠️ Areas to Probe / Potential Gaps
+        </h2>
+      </div>
+      {% if plan.skill_gaps %}
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+          {% for gap in plan.skill_gaps %}
+            <li style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-main);">
+              <span style="color: #b45309; font-weight: bold;">•</span>
+              <span>{{ gap }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Gaps will be identified during plan generation.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Planned Core Competencies Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">📊 Evaluated Competencies & Rubric Weights</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Sum of weights: 100%</span>
+    </div>
+
+    {% if plan.required_competencies %}
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for comp in plan.required_competencies %}
+          <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; background: var(--bg-main);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-weight: 600; font-size: 1rem; color: var(--text-main);">{{ comp.name }}</span>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="badge badge-indigo">Weight: {{ comp.weight }}%</span>
+                <span class="badge badge-gray">{{ comp.difficulty }}</span>
+              </div>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
+              <b>Objective:</b> {{ comp.objective }}
+            </p>
+            <p style="font-size: 0.825rem; color: var(--text-muted);">
+              <b>Expected Evidence:</b> {{ comp.expected_evidence }}
+            </p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted);">No competencies defined yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Structured Interview Flow / Sections -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <h2 class="card-title" style="margin: 0;">Structured Conversational Interview Flow</h2>
+      </div>
+      <span style="font-size: 0.85rem; color: var(--text-secondary);">Target: {{ interview.duration_minutes }} Minutes</span>
+    </div>
+
+    {% if plan.sections %}
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% for section in plan.sections %}
+          <div style="border-left: 3px solid var(--primary); padding-left: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h4 style="font-size: 1rem; font-weight: 600; color: var(--text-main);">
+                {{ loop.index }}. {{ section.title }}
+              </h4>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">~{{ section.target_duration_minutes }} min</span>
+            </div>
+            {% for q in section.questions %}
+              <div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 0.5rem;">
+                <div style="font-weight: 500; font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.25rem;">
+                  "{{ q.question_text }}"
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                  <span style="color: var(--primary); font-weight: 600;">Adaptive Follow-Up:</span> {{ q.follow_up_guidance }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted);">Interview flow sections will appear once planned.</p>
+    {% endif %}
+
+    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-secondary);">
+      <b>How the live interview works:</b> The candidate connects to an AI voice agent. The AI speaks one question at a time, listens actively to candidate responses, asks adaptive follow-ups if answers are brief, and progresses naturally through the sections. At the end, an evidence-based report is automatically computed.
+    </div>
+  </div>
+
+  <!-- Conversation Transcript (if already recorded) -->
+  {% if interview.transcript and (interview.transcript|length) > 0 %}
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <h2 class="card-title">📝 Recorded Conversation Transcript</h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ interview.transcript|length }} turn{{ '' if (interview.transcript|length) == 1 else 's' }} recorded</span>
+      </div>
+      {% if interview.status in ('awaiting_finalization', 'interrupted', 'in_progress') and (interview.transcript|length) >= 2 %}
+      <button type="button" id="finalizeFromPrepBtn" class="btn btn-primary btn-sm" style="box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);">
+        ⚡ Generate Evaluation Report Now
+      </button>
+      {% endif %}
+    </div>
+
+    <div style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem 0;">
+      {% for turn in interview.transcript %}
+        <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); background: {% if turn.role in ('candidate', 'user') %}#f0fdf4; border: 1px solid #bbf7d0; align-self: flex-end; margin-left: 2rem;{% else %}#f8fafc; border: 1px solid var(--border-color); align-self: flex-start; margin-right: 2rem;{% endif %}; max-width: 85%;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: {% if turn.role in ('candidate', 'user') %}#16a34a{% else %}#4f46e5{% endif %}; margin-bottom: 0.25rem;">
+            {{ 'Candidate (' ~ interview.candidate_name ~ ')' if turn.role in ('candidate', 'user') else 'Alex (AI Interviewer)' }}
+          </div>
+          <div style="font-size: 0.875rem; color: var(--text-main); line-height: 1.45;">
+            {{ turn.message }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Live Voice Interview Engine Selector Card -->
+  <div class="card" style="margin-top: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1.5px solid var(--border-color);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <div style="font-size: 0.725rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">
+          🎙️ Voice Engine Selection
+        </div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0;">
+          Select Voice Interview Engine
+        </h3>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span id="voiceEngineSavingBadge" class="badge badge-emerald" style="display: none; font-size: 0.8rem;">Saved ✓</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
+      <!-- ElevenLabs -->
+      <label class="voice-engine-card" style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 1.5px solid {% if interview.voice_engine == 'elevenlabs' %}var(--primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); cursor: pointer; background: white; transition: all 0.2s ease;">
+        <input type="radio" name="voice_engine_select" value="elevenlabs" {% if interview.voice_engine == 'elevenlabs' %}checked{% endif %} style="margin-top: 0.2rem; accent-color: var(--primary);">
+        <div>
+          <div style="font-weight: 600; font-size: 0.925rem; color: var(--text-main);">🎙️ ElevenLabs AI</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+            Conversational Agent with dynamic variables (candidate projects, JD requirements, pre-planned questions).
+          </div>
+        </div>
+      </label>
+
+      <!-- OpenAI Realtime -->
+      <label class="voice-engine-card" style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 1.5px solid {% if interview.voice_engine == 'openai_realtime' %}var(--primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); cursor: pointer; background: white; transition: all 0.2s ease;">
+        <input type="radio" name="voice_engine_select" value="openai_realtime" {% if interview.voice_engine == 'openai_realtime' %}checked{% endif %} style="margin-top: 0.2rem; accent-color: var(--primary);">
+        <div>
+          <div style="font-weight: 600; font-size: 0.925rem; color: var(--text-main);">⚡ OpenAI Realtime</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+            Ultra low-latency WebRTC speech-to-speech with natural interruptions.
+          </div>
+        </div>
+      </label>
+
+      <!-- Sarvam AI -->
+      <label class="voice-engine-card" style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 1.5px solid {% if interview.voice_engine == 'sarvam' %}var(--primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); cursor: pointer; background: white; transition: all 0.2s ease;">
+        <input type="radio" name="voice_engine_select" value="sarvam" {% if interview.voice_engine == 'sarvam' %}checked{% endif %} style="margin-top: 0.2rem; accent-color: var(--primary);">
+        <div>
+          <div style="font-weight: 600; font-size: 0.925rem; color: var(--text-main);">🇮🇳 Sarvam AI Voice</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+            Bulbul natural TTS + Saaras speech recognition with subtle fillers and zero answer repetition.
+          </div>
+        </div>
+      </label>
+
+      <!-- Gemini Live -->
+      <label class="voice-engine-card" style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 1.5px solid {% if interview.voice_engine == 'gemini_live' %}var(--primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); cursor: pointer; background: white; transition: all 0.2s ease;">
+        <input type="radio" name="voice_engine_select" value="gemini_live" {% if interview.voice_engine == 'gemini_live' %}checked{% endif %} style="margin-top: 0.2rem; accent-color: var(--primary);">
+        <div>
+          <div style="font-weight: 600; font-size: 0.925rem; color: var(--text-main);">♊ Gemini Flash Live</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+            High-reasoning conversational voice engine with browser audio stream.
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+        Dashboard
+      </a>
+      <a href="{{ url_for('interviews.live_interview', interview_id=interview.id) }}" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
+        Enter Live Voice Studio →
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const interviewId = "{{ interview.id }}";
+</script>
+<script src="{{ url_for('static', filename='js/preparation.js') }}"></script>
+{% endblock %}

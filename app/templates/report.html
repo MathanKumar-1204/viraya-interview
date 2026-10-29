@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluation Report: {{ interview.candidate_name }} - Viraya Company{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+  <!-- Header Action Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="{{ url_for('dashboard.index') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        ← Back to Dashboard
+      </a>
+      <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
+        Candidate Evaluation Report
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Candidate: <b>{{ interview.candidate_name }}</b> • Role: <b>{{ interview.job_title }}</b> • Viraya Company • {{ report.created_at|format_dt("%B %d, %Y") }}
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <a href="{{ url_for('api.view_resume', interview_id=interview.id) }}" target="_blank" class="btn btn-secondary btn-lg">
+        View Resume
+      </a>
+      <a href="{{ url_for('reports.download_pdf', interview_id=interview.id) }}" class="btn btn-primary btn-lg">
+        Download PDF Report
+      </a>
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary btn-lg">
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Overall Score Hero Banner -->
+  <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%); border-color: #c7d2fe;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+      <div style="flex: 1; min-width: 300px;">
+        <span class="badge badge-indigo" style="margin-bottom: 0.5rem;">Calibrated Evaluation</span>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+          Executive Performance Summary
+        </h2>
+        <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;">
+          {{ report.overall_summary }}
+        </p>
+      </div>
+
+      <div style="text-align: center; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem 2rem; box-shadow: var(--shadow-md); min-width: 170px;">
+        <div style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem; letter-spacing: 0.04em;">
+          Overall Score
+        </div>
+        <div style="font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1;">
+          {{ report.overall_score }}
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-top: 0.35rem;">
+          out of 100
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance Dimensions Assessment Breakdown -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+      <h2 class="card-title">Performance Dimensions & Calibrated Scoring Rubric</h2>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Dynamically evaluated from interview transcript</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      {% for comp in report.competency_scores %}
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; background: var(--bg-main);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="font-weight: 700; font-size: 1.05rem; color: var(--text-main);">{{ comp.name }}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">(Weight: {{ comp.weight }}%)</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              {% if comp.score is not none %}
+                {% set display_score = comp.score if comp.score > 5 else (comp.score * 20)|round|int %}
+                <span class="score-pill">
+                  {{ display_score }} / 100
+                </span>
+                {% if comp.benchmark_level %}
+                  <span class="badge {% if comp.benchmark_level == 'Exceptional' %}badge-emerald{% elif comp.benchmark_level == 'Proficient' %}badge-indigo{% elif comp.benchmark_level == 'Developing' %}badge-amber{% else %}badge-red{% endif %}">
+                    {{ comp.benchmark_level }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <span class="badge badge-gray">Not Assessed</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Score Progress Meter -->
+          {% if comp.score is not none %}
+            {% set pct = comp.score if comp.score > 5 else (comp.score * 20)|round|int %}
+            <div class="progress-bar-container" style="height: 6px; margin-bottom: 0.85rem;">
+              <div class="progress-bar-fill" style="width: {{ pct }}%;"></div>
+            </div>
+          {% endif %}
+
+          <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.5rem; line-height: 1.5;">
+            <b>Evaluator Rationale:</b> {{ comp.rationale }}
+          </p>
+
+          {% if comp.supporting_quote %}
+            <div style="background: white; border-left: 3px solid var(--primary); padding: 0.6rem 0.85rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 0.85rem; color: #334155; font-style: italic; margin-bottom: 0.5rem;">
+              "{{ comp.supporting_quote }}"
+            </div>
+          {% endif %}
+
+          {% if comp.improvement_recommendation %}
+            <div style="font-size: 0.825rem; color: var(--primary-hover); font-weight: 500;">
+              <b>Candidate Developmental Suggestion:</b> {{ comp.improvement_recommendation }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Strengths & Improvement Areas 2-Column Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+    <!-- Strengths -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h2 class="card-title" style="color: var(--success); font-size: 1.1rem;">
+          Demonstrated Strengths
+        </h2>
+      </div>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for s in report.strengths %}
+          <li style="display: flex; gap: 0.6rem; font-size: 0.9rem; color: var(--text-main); line-height: 1.5;">
+            <span style="color: var(--success); font-weight: bold; font-size: 1.1rem; line-height: 1;">✓</span>
+            <span>{{ s }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Improvement Areas -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h2 class="card-title" style="color: #b45309; font-size: 1.1rem;">
+          Priority Areas for Growth
+        </h2>
+      </div>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for a in report.improvement_areas %}
+          <li style="display: flex; gap: 0.6rem; font-size: 0.9rem; color: var(--text-main); line-height: 1.5;">
+            <span style="color: #b45309; font-weight: bold; font-size: 1.1rem; line-height: 1;">•</span>
+            <span>{{ a }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Practice Questions & Recommendations -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+    <!-- Practice Questions -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h2 class="card-title" style="font-size: 1.1rem;">Suggested Practice Questions</h2>
+      </div>
+      <ul style="list-style-type: decimal; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+        {% for q in report.suggested_practice_questions %}
+          <li>{{ q }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h2 class="card-title" style="font-size: 1.1rem;">Recommended Development Steps</h2>
+      </div>
+      <ul style="list-style-type: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+        {% for r in report.recommendations %}
+          <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Transcript Accordion Card -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="cursor: pointer;" id="reportTranscriptHeader">
+      <div class="card-title">
+        <span>Complete Interview Transcript</span>
+      </div>
+      <button type="button" id="reportTranscriptToggleBtn" class="btn btn-secondary btn-sm">
+        Show Transcript ▼
+      </button>
+    </div>
+
+    <div id="reportTranscriptPanel" style="display: none;">
+      {% if interview.transcript %}
+        <div class="transcript-box" style="max-height: 450px;">
+          {% for turn in interview.transcript %}
+            <div class="transcript-message {% if turn.role in ('interviewer', 'agent') %}interviewer{% else %}candidate{% endif %}">
+              <div class="message-role">
+                {% if turn.role in ('interviewer', 'agent') %}Alex (Viraya AI Interviewer){% else %}{{ interview.candidate_name }}{% endif %}
+              </div>
+              <div>{{ turn.message }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">
+          No transcript turns recorded for this session.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Disclaimer Notice -->
+  <div style="padding: 1.25rem; background: var(--bg-muted); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.825rem; color: var(--text-secondary); line-height: 1.6; text-align: center; margin-top: 1.5rem;">
+    <b>Assessment Notice:</b> {{ report.assessment_limitations }}
+  </div>
+
+  <!-- Bottom CTA -->
+  <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; margin-bottom: 2rem;">
+    <a href="{{ url_for('reports.download_pdf', interview_id=interview.id) }}" class="btn btn-primary btn-lg">
+      Download Full PDF Report
+    </a>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary btn-lg">
+      Return to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/report.js') }}"></script>
+{% endblock %}

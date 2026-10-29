@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Viraya Company's Interview AI Bot{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">
+      {% if session.get('user_name') %}
+        Welcome back, {{ session.get('user_name') }}
+      {% else %}
+        Viraya Company's Interview AI Bot
+      {% endif %}
+    </h1>
+    <p style="color: var(--text-secondary); max-width: 650px; font-size: 0.95rem;">
+      AI-powered spoken voice technical interviews for the AI Application Developer role. Candidate resumes, live transcriptions, and calibrated evaluation reports are saved securely to your account.
+    </p>
+  </div>
+  <a href="{{ url_for('interviews.new_interview') }}" class="btn btn-primary btn-lg" style="font-weight: 600;">
+    + Start Interview
+  </a>
+</div>
+
+<!-- Quick Statistics Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ total_count }}</h3>
+      <p>Total Interviews</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ completed_count }}</h3>
+      <p>Completed Interviews</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ in_progress_count }}</h3>
+      <p>In Progress / Active</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ avg_score }} / 100</h3>
+      <p>Average Candidate Score</p>
+    </div>
+  </div>
+</div>
+
+<!-- Interview Sessions Table -->
+<div class="card" style="margin-top: 1.5rem;">
+  <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+    <h2 class="card-title">
+      <span>Candidate Interview Sessions</span>
+    </h2>
+    <span style="font-size: 0.85rem; color: var(--text-muted);">
+      {{ total_count }} candidate{% if total_count != 1 %}s{% endif %} evaluated
+    </span>
+  </div>
+
+  {% if interviews %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Target Role</th>
+            <th>Duration</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for interview in interviews %}
+            <tr id="interview-row-{{ interview.id }}">
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">{{ interview.candidate_name }}</div>
+                {% if interview.candidate_email %}
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">{{ interview.candidate_email }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <span style="font-weight: 500;">{{ interview.job_title }}</span>
+                <div style="font-size: 0.775rem; color: var(--text-muted);">Viraya Role</div>
+              </td>
+              <td>{{ interview.duration_minutes }} min</td>
+              <td>{{ interview.created_at|format_dt }}</td>
+              <td>
+                {% set is_completed_entry = (interview.status == 'completed' or interview.report or interview.has_report) %}
+                <span class="badge {{ 'badge-success' if is_completed_entry else (interview.status|status_badge_class) }}">
+                  {{ 'Completed' if is_completed_entry else interview.status.replace('_', ' ') }}
+                </span>
+              </td>
+              <td>
+                {% if interview.report %}
+                  <span style="font-weight: 700; color: var(--primary);">
+                    {{ interview.report.overall_score }} / 100
+                  </span>
+                {% elif interview.overall_score is not none %}
+                  <span style="font-weight: 700; color: var(--primary);">
+                    {{ interview.overall_score }} / 100
+                  </span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 0.4rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                  <!-- View Resume Button (Saved in MongoDB) -->
+                  <a href="{{ url_for('api.view_resume', interview_id=interview.id) }}" target="_blank" class="btn btn-secondary btn-sm" title="View uploaded resume saved in MongoDB">
+                    Resume
+                  </a>
+
+                  {% if is_completed_entry and (interview.report or interview.has_report) %}
+                    <a href="{{ url_for('reports.view_report', interview_id=interview.id) }}" class="btn btn-secondary btn-sm" title="View Evaluation Report">
+                      Report
+                    </a>
+                    <a href="{{ url_for('reports.download_pdf', interview_id=interview.id) }}" class="btn btn-secondary btn-sm" title="Download PDF Report">
+                      PDF
+                    </a>
+                  {% else %}
+                    <a href="{{ url_for('interviews.live_interview', interview_id=interview.id) }}" class="btn btn-primary btn-sm" title="Enter live voice interview">
+                      Start Interview
+                    </a>
+                  {% endif %}
+                  
+                  <button type="button" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" onclick="deleteInterview('{{ interview.id }}')" title="Delete Interview Record">
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3.5rem 1rem;">
+      <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">No interviews created yet</h3>
+      <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 1.5rem; font-size: 0.95rem;">
+        Get started by creating a new interview with a candidate's resume for Viraya Company's AI Application Developer role.
+      </p>
+      <a href="{{ url_for('interviews.new_interview') }}" class="btn btn-primary">
+        + Start First Interview
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

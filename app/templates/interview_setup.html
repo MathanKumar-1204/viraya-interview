@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Start Interview - Viraya Company's Interview AI Bot{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+  <div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('dashboard.index') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+      ← Back to Dashboard
+    </a>
+    <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">
+      Candidate Interview Setup
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+      Enter the candidate's details and upload their resume. Viraya's Interview AI Bot will evaluate their CV against the AI Application Developer specification and prepare tailored situational questions.
+    </p>
+  </div>
+
+  <!-- Form Setup Card -->
+  <div class="card" id="setupFormCard">
+    <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <h2 class="card-title" style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">
+          Candidate Information
+        </h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.2rem 0 0;">
+          Job role and evaluation criteria are pre-configured for Viraya's AI Application Developer position.
+        </p>
+      </div>
+      <span class="badge badge-indigo">Viraya Role</span>
+    </div>
+
+    <form id="setupForm" enctype="multipart/form-data">
+      <!-- Hidden Fixed Configuration Parameters -->
+      <input type="hidden" name="duration_minutes" value="15">
+      <input type="hidden" name="difficulty" value="Intermediate">
+      <input type="hidden" name="language" value="English">
+      <input type="hidden" name="llm_provider" value="openai">
+      <input type="hidden" name="voice_engine" value="elevenlabs">
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="candidate_name">Candidate Full Name <span class="required">*</span></label>
+          <input type="text" id="candidate_name" name="candidate_name" class="form-input" placeholder="e.g. Maya Chen" required autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="job_title">Target Job Title <span class="required">*</span></label>
+          <select id="job_title" name="job_title" class="form-select" required style="background-color: var(--bg-muted); font-weight: 600;">
+            <option value="AI developer" selected>AI developer</option>
+          </select>
+          <div class="form-hint" style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Fixed role specification based on Viraya's AI Application Developer JD.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 0.5rem;">
+        <label class="form-label" for="candidate_email">Candidate Email Address (Optional)</label>
+        <input type="email" id="candidate_email" name="candidate_email" class="form-input" placeholder="e.g. candidate@example.com" autocomplete="email">
+      </div>
+
+      <!-- Candidate Resume Upload -->
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <label class="form-label" for="resume_file">
+          Candidate Resume / CV <span class="required" style="color: var(--danger);">*</span>
+        </label>
+        <div class="file-dropzone" id="resumeDropzone" style="padding: 1.75rem 1.25rem; text-align: center; border: 2px dashed var(--border-color); border-radius: var(--radius-md); background: #fafafa; cursor: pointer; transition: all 0.2s ease;">
+          <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx,.txt" required style="display: none;">
+          <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.35rem;">
+            Click to browse or drag & drop resume file
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Accepted formats: PDF or DOCX (Max 10 MB). The file will be saved securely to your dashboard.
+          </div>
+          <div class="file-preview" id="resumePreview" style="display: none; margin-top: 0.75rem; padding: 0.5rem 0.85rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); color: #065f46; font-size: 0.85rem; justify-content: center; align-items: center; gap: 0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Error Display Box -->
+      <div id="formErrorBox" class="config-banner" style="display: none; background: #fef2f2; border-color: #fecaca; color: #991b1b; margin-top: 1rem;">
+        <div id="formErrorMessage"></div>
+      </div>
+
+      <!-- Submit Action -->
+      <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center; margin-top: 2rem;">
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="min-width: 220px; font-weight: 600;">
+          <span id="btnText">Generate Interview Plan →</span>
+          <span id="btnSpinner" style="display: none;">Analyzing Resume & Preparing...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Interview Ready Card (Shown after generation without moving to a new page) -->
+  <div class="card" id="interviewReadyCard" style="display: none; text-align: center; padding: 3rem 2rem; border: 1.5px solid var(--border-color); box-shadow: var(--shadow-md);">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ecfdf5; color: #059669; font-size: 1.75rem; margin-bottom: 1.25rem;">
+      ✓
+    </div>
+
+    <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+      Interview Plan Ready
+    </h2>
+    
+    <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 1.75rem; font-size: 0.95rem; line-height: 1.6;">
+      The interview questions for <b id="readyCandidateName" style="color: var(--text-main);">Candidate</b> have been generated for the <b>AI developer</b> role. The session will cover their CV, followed by situational problem-solving scenarios.
+    </p>
+
+    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+      <a id="startLiveInterviewBtn" href="#" class="btn btn-primary btn-lg" style="font-size: 1.05rem; padding: 0.85rem 2.25rem; font-weight: 600;">
+        Start Live Interview →
+      </a>
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary btn-lg">
+        Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/setup.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Portal - Viraya Company's Interview AI Bot{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+      <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; padding: 0.2rem 0.6rem;">
+        Admin Portal
+      </span>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">
+        Authenticated as {{ session.get('user_email') }}
+      </span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">
+      Viraya Candidate Interviews
+    </h1>
+    <p style="color: var(--text-secondary); max-width: 750px; font-size: 0.95rem;">
+      Administrative overview of all technical interview sessions conducted across the platform for the <b>AI developer</b> role. Records are ordered chronologically from <b>newest to oldest</b>.
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+      User Dashboard
+    </a>
+    <a href="{{ url_for('interviews.new_interview') }}" class="btn btn-primary" style="font-weight: 600;">
+      + Start New Interview
+    </a>
+  </div>
+</div>
+
+<!-- Administrative Metrics Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ total_count }}</h3>
+      <p>Total Platform Interviews</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ completed_count }}</h3>
+      <p>Completed Interviews</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ in_progress_count }}</h3>
+      <p>Active / In Progress</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-info">
+      <h3>{{ avg_score }} / 100</h3>
+      <p>Platform Average Score</p>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Interviews Table Card -->
+<div class="card" style="margin-top: 1.5rem;">
+  <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title" style="margin-bottom: 0.2rem;">
+        All Interviews (Newest to Oldest)
+      </h2>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">
+        Showing {{ total_count }} total interview record{% if total_count != 1 %}s{% endif %} in reverse-chronological order
+      </span>
+    </div>
+
+    <!-- Quick search filter -->
+    <div style="max-width: 320px; width: 100%;">
+      <input 
+        type="text" 
+        id="adminSearchInput" 
+        placeholder="Filter by candidate or email..." 
+        class="form-control"
+        style="padding: 0.5rem 0.85rem; font-size: 0.9rem;"
+      >
+    </div>
+  </div>
+
+  {% if interviews %}
+    <div class="table-responsive">
+      <table class="data-table" id="adminInterviewsTable">
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Candidate</th>
+            <th>Target Role</th>
+            <th>Interview Date & Time</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th style="text-align: right;">Admin Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for interview in interviews %}
+            {% set is_completed_entry = (interview.status == 'completed' or interview.report or interview.has_report) %}
+            <tr id="admin-row-{{ interview.id }}" class="admin-interview-row">
+              <td style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600;">
+                {{ loop.index }}
+              </td>
+              <td>
+                <div class="candidate-name" style="font-weight: 600; color: var(--text-main);">
+                  {{ interview.candidate_name or 'Unnamed Candidate' }}
+                </div>
+                {% if interview.candidate_email %}
+                  <div class="candidate-email" style="font-size: 0.8rem; color: var(--text-muted);">
+                    {{ interview.candidate_email }}
+                  </div>
+                {% endif %}
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">
+                  ID: {{ interview.id }}
+                </div>
+              </td>
+              <td>
+                <span style="font-weight: 500;">{{ interview.job_title or 'AI developer' }}</span>
+                <div style="font-size: 0.775rem; color: var(--text-muted);">Viraya Role</div>
+              </td>
+              <td>
+                <div style="font-weight: 500; color: var(--text-main);">
+                  {{ interview.created_at|format_dt }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                  Duration: {{ interview.duration_minutes }} min
+                </div>
+              </td>
+              <td>
+                <span class="badge {{ 'badge-success' if is_completed_entry else (interview.status|status_badge_class) }}">
+                  {{ 'Completed' if is_completed_entry else interview.status.replace('_', ' ') }}
+                </span>
+              </td>
+              <td>
+                {% if interview.report and interview.report.overall_score is not none %}
+                  <span style="font-weight: 700; color: var(--primary);">
+                    {{ interview.report.overall_score }} / 100
+                  </span>
+                {% elif interview.overall_score is not none %}
+                  <span style="font-weight: 700; color: var(--primary);">
+                    {{ interview.overall_score }} / 100
+                  </span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 0.85rem;">—</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 0.4rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                  <!-- View Resume from MongoDB -->
+                  <a href="{{ url_for('api.view_resume', interview_id=interview.id) }}" target="_blank" class="btn btn-secondary btn-sm" title="View uploaded resume stored in MongoDB">
+                    Resume
+                  </a>
+
+                  <!-- View Report if completed -->
+                  {% if is_completed_entry and (interview.report or interview.has_report) %}
+                    <a href="{{ url_for('reports.view_report', interview_id=interview.id) }}" class="btn btn-secondary btn-sm" title="View Detailed Report">
+                      Report
+                    </a>
+                    <a href="{{ url_for('reports.download_pdf', interview_id=interview.id) }}" class="btn btn-secondary btn-sm" title="Download PDF Evaluation">
+                      PDF
+                    </a>
+                  {% else %}
+                    <a href="{{ url_for('interviews.live_interview', interview_id=interview.id) }}" class="btn btn-primary btn-sm" title="Enter live session">
+                      Session
+                    </a>
+                  {% endif %}
+
+                  <!-- Delete Interview Button -->
+                  <button type="button" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" onclick="deleteAdminInterview('{{ interview.id }}')" title="Delete this interview permanently">
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3.5rem 1rem;">
+      <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">No interviews found</h3>
+      <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 1.5rem; font-size: 0.95rem;">
+        There are currently no interview sessions recorded in the database.
+      </p>
+      <a href="{{ url_for('interviews.new_interview') }}" class="btn btn-primary">
+        + Create Interview
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Filter interviews by candidate name or email in real-time
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('adminSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.admin-interview-row');
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    }
+  });
+
+  // Admin delete interview handler
+  async function deleteAdminInterview(interviewId) {
+    if (!confirm('Are you sure you want to permanently delete this candidate interview? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/admin/interviews/${interviewId}/delete`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const row = document.getElementById(`admin-row-${interviewId}`);
+        if (row) {
+          row.style.transition = 'opacity 0.25s ease';
+          row.style.opacity = '0';
+          setTimeout(() => row.remove(), 250);
+        }
+      } else {
+        alert('Failed to delete interview record. Please try again.');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Network error while deleting interview.');
+    }
+  }
+</script>
+{% endblock %}

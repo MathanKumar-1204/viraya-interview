@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Live Interview: {{ interview.candidate_name }} - Viraya Company{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <!-- Header Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+        <span class="badge badge-indigo">ElevenLabs AI Voice</span>
+        <span id="connectionBadge" class="badge badge-gray">Not Connected</span>
+      </div>
+      <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.15rem;">
+        {{ interview.candidate_name }}
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">
+        Role: <b>{{ interview.job_title }}</b> • Viraya Company • Spoken Technical Assessment
+      </p>
+    </div>
+
+    <!-- Timer & Duration Display -->
+    <div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem 1.25rem; text-align: right; box-shadow: var(--shadow-sm);">
+      <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+        Elapsed / Target Time
+      </div>
+      <div style="font-size: 1.35rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">
+        <span id="timerDisplay">00:00</span> <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">/ {{ interview.duration_minutes }}:00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+      <span id="currentSectionTitle">Section: CV Walkthrough & Situational Assessment</span>
+      <span id="progressPercent">0% Elapsed</span>
+    </div>
+    <div class="progress-bar-container">
+      <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+    </div>
+  </div>
+
+  <!-- Live Voice Interaction Hero Card -->
+  <div class="card" style="text-align: center; padding: 3rem 2rem; position: relative; overflow: hidden;">
+    <!-- Active Animated Pulsing Voice Orb -->
+    <div id="voiceOrb" class="pulsing-orb">
+      <span id="orbIcon" style="font-size: 1.4rem; color: white;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </span>
+    </div>
+
+    <h2 id="studioStateTitle" style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+      Ready for Spoken Assessment
+    </h2>
+    <p id="studioStateSubtitle" style="color: var(--text-secondary); max-width: 580px; margin: 0 auto 1.5rem; font-size: 0.95rem; line-height: 1.5;">
+      Click "Start Interview Call" to begin. Alex (Viraya's AI Interviewer) will greet the candidate and ask about their CV and projects, followed by situational problem-solving scenarios.
+    </p>
+
+    <!-- Voice Connection Status Indicator -->
+    <div id="voiceStatusContainer" style="margin-bottom: 1.5rem; min-height: 48px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.75rem;">
+      {% if not elevenlabs_ready %}
+        <div class="config-banner" style="display: inline-flex; margin: 0 auto;">
+          <span>ElevenLabs configuration required. Ensure ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID are set.</span>
+        </div>
+      {% else %}
+        <div id="audioStatusPill" style="font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.4rem 1rem; background: var(--bg-muted); border-radius: var(--radius-full); border: 1px solid var(--border-color);">
+          <span id="audioStatusDot" style="width: 10px; height: 10px; border-radius: 50%; background-color: #94a3b8; display: inline-block;"></span>
+          <span id="audioStatusText">Microphone & audio ready</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Live Controls -->
+    <div style="display: flex; justify-content: center; gap: 1rem; align-items: center; flex-wrap: wrap;">
+      <button id="startInterviewBtn" class="btn btn-primary btn-lg" {% if not elevenlabs_ready %}disabled{% endif %} style="font-weight: 600; padding: 0.8rem 2rem;">
+        Start Interview Call
+      </button>
+
+      <button id="endInterviewBtn" class="btn btn-danger btn-lg" style="display: none; font-weight: 600; padding: 0.8rem 2rem;">
+        End Interview & Generate Report
+      </button>
+
+      <a href="{{ url_for('dashboard.index') }}" id="dashboardReturnBtn" class="btn btn-secondary">
+        Return to Dashboard
+      </a>
+    </div>
+
+    <!-- Hardware Guidance Hint -->
+    <div style="margin-top: 2rem; display: flex; align-items: center; justify-content: center; gap: 1.5rem; font-size: 0.825rem; color: var(--text-muted); flex-wrap: wrap;">
+      <span>Headphones recommended for crisp audio</span>
+      <span>Allow microphone permissions when prompted</span>
+      <span>Session concludes automatically once questions are completed</span>
+    </div>
+  </div>
+
+  <!-- Expandable Live Transcript Card -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="cursor: pointer;" id="transcriptToggleHeader">
+      <div class="card-title">
+        <span>Real-Time Spoken Transcript</span>
+        <span id="turnCounter" class="badge badge-gray" style="margin-left: 0.5rem;">0 exchanges</span>
+      </div>
+      <button type="button" id="transcriptToggleBtn" class="btn btn-secondary btn-sm">
+        Collapse ▲
+      </button>
+    </div>
+
+    <div id="transcriptPanelBody">
+      <div id="transcriptBox" class="transcript-box">
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.875rem;" id="emptyTranscriptMsg">
+          The live conversation transcript will appear here once speaking commences...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Finalizing & Report Generation Modal -->
+<div id="finalizingModal" class="modal-backdrop">
+  <div class="modal-dialog" style="text-align: center; padding: 2.5rem 1.5rem;">
+    <div style="width: 56px; height: 56px; margin: 0 auto 1.25rem; border: 3px solid #e0e7ff; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+      Synthesizing Evaluation Report...
+    </h3>
+    <p style="color: var(--text-secondary); max-width: 440px; margin: 0 auto 1.5rem; font-size: 0.9rem; line-height: 1.5;">
+      Analyzing spoken transcript evidence against Viraya Company's AI Application Developer evaluation dimensions.
+    </p>
+    <div class="progress-bar-container" style="max-width: 300px; margin: 0 auto 1rem;">
+      <div class="progress-bar-fill" style="width: 100%;"></div>
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">Please wait a moment...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const interviewId = "{{ interview.id }}";
+  const candidateName = "{{ interview.candidate_name }}";
+  const jobTitle = "{{ interview.job_title }}";
+  const targetDurationMinutes = parseInt("{{ interview.duration_minutes }}", 10);
+  const authMode = "{{ auth_mode }}";
+  const configuredAgentId = "{{ agent_id }}";
+  const voiceEngine = "elevenlabs";
+  const isElevenLabsConfigured = {{ 'true' if elevenlabs_ready else 'false' }};
+  const isEngineConfigured = {{ 'true' if elevenlabs_ready else 'false' }};
+</script>
+<script type="module" src="{{ url_for('static', filename='js/live_interview.js') }}"></script>
+{% endblock %}

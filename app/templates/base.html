@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Viraya Company's Interview AI Bot{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- ElevenLabs Official Conversational AI Widget Script -->
+  <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('admin.admin_dashboard') if session.get('is_admin') else url_for('dashboard.index') }}" class="brand-logo">
+        <span class="brand-badge-square">V</span>
+        <span class="brand-title">Viraya <span style="font-weight: 400; color: var(--text-secondary); font-size: 0.95rem;">Interview AI Bot</span></span>
+      </a>
+      <div class="nav-links" style="display: flex; align-items: center; gap: 0.85rem;">
+        {% if session.get('user_id') %}
+          {% if session.get('is_admin') %}
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link" style="color: var(--primary); font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary);"></span>
+              Admin Portal
+            </a>
+          {% endif %}
+          <a href="{{ url_for('dashboard.index') }}" class="nav-link">Dashboard</a>
+          <a href="{{ url_for('interviews.new_interview') }}" class="btn btn-primary btn-sm">+ Start Interview</a>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: 0.5rem; padding-left: 0.75rem; border-left: 1px solid var(--border-color);">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; background: var(--bg-muted); border-radius: var(--radius-full);">
+              {% if session.get('is_admin') %}
+                <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">Admin</span>
+              {% endif %}
+              {{ session.get('user_name', 'Account') }}
+            </span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" style="color: var(--text-secondary);" title="Sign Out">
+              Log Out
+            </a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="nav-link">Log In</a>
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-sm">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+          {% for category, message in messages %}
+            <div class="config-banner" style="{% if category == 'danger' %}background: var(--danger-light); color: var(--danger); border-color: #fecaca;{% elif category == 'success' %}background: var(--success-light); color: #065f46; border-color: #a7f3d0;{% endif %}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if error_title %}
+      <div class="card" style="text-align: center; padding: 3rem 1.5rem;" id="serverlessErrorCard">
+        <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--text-main);">{{ error_title }}</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;" id="errorMessageText">{{ error_message }}</p>
+        <div id="recoveryStatusNotice" style="display: none; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.925rem; color: var(--primary); font-weight: 600;">Syncing interview state...</span>
+        </div>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary" id="returnDashboardBtn">Return to Dashboard</a>
+      </div>
+      <script>
+        (async function autoRecoverServerlessSession() {
+          const path = window.location.pathname;
+          const match = path.match(/\/interviews\/([a-zA-Z0-9_-]+)/);
+          if (!match) return;
+          const interviewId = match[1];
+          let cached = sessionStorage.getItem("interview_" + interviewId) || sessionStorage.getItem("current_interview");
+          if (!cached) return;
+          try {
+            const data = JSON.parse(cached);
+            if (data.interview_id === interviewId || data.id === interviewId) {
+              const notice = document.getElementById("recoveryStatusNotice");
+              if (notice) notice.style.display = "block";
+              const res = await fetch("/api/interviews/restore", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+              });
+              if (res.ok) {
+                window.location.reload();
+              }
+            }
+          } catch (e) {
+            console.warn("Auto-recovery attempt notice:", e);
+          }
+        })();
+      </script>
+    {% else %}
+      {% block content %}{% endblock %}
+    {% endif %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.4rem; align-items: center;">
+      <p><b>Viraya Company's Interview AI Bot</b> • Automated Technical Candidate Assessment</p>
+      <p style="font-size: 0.775rem;">
+        Spoken conversational AI voice powered by ElevenLabs • Technical evaluation powered by OpenAI
+      </p>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
