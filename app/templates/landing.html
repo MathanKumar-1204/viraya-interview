@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Viraya Company's Interview AI Bot - Technical Screening{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px; margin: 2rem auto; padding: 0 1rem;">
+  
+  <!-- Header / Brand Card -->
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <div style="width: 58px; height: 58px; background: var(--primary); color: white; border-radius: var(--radius-md); font-weight: 800; font-size: 1.85rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: var(--shadow-md);">
+      V
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; letter-spacing: -0.02em;">
+      Viraya Company's Interview AI Bot
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 0.975rem; max-width: 520px; margin: 0 auto; line-height: 1.55;">
+      Welcome to your first-round technical screening. Enter your details, upload your CV, and verify the captcha to start your spoken technical interview.
+    </p>
+
+    <!-- Role Information Pill -->
+    <div style="margin-top: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--bg-muted); border: 1px solid var(--border-color); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.85rem;">
+      <span style="color: var(--text-muted); font-weight: 500;">Position:</span>
+      <span style="font-weight: 700; color: var(--primary);">AI developer</span>
+      <span style="color: var(--border-color);">|</span>
+      <span style="color: var(--text-secondary);">15 Min Spoken Technical Assessment</span>
+    </div>
+  </div>
+
+  <!-- Dynamic Feedback Banner -->
+  <div id="alertBanner" style="display: none; margin-bottom: 1.25rem;" class="config-banner">
+    <span id="alertMessage"></span>
+  </div>
+
+  <!-- Candidate Registration & Interview Launch Card -->
+  <div class="card" style="box-shadow: var(--shadow-lg); padding: 2rem; border-radius: var(--radius-lg);">
+    <form id="candidateSetupForm" enctype="multipart/form-data">
+      
+      <!-- Full Name Field -->
+      <div class="form-group" style="margin-bottom: 1.35rem;">
+        <label class="form-label" for="candidateName" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+          Full Name <span class="required" style="color: var(--danger);">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="candidateName" 
+          name="candidate_name" 
+          class="form-input" 
+          placeholder="e.g. Maya Chen" 
+          required 
+          autocomplete="name"
+          style="width: 100%;"
+        >
+      </div>
+
+      <!-- Email Address Field (Strict One-time Interview Policy) -->
+      <div class="form-group" style="margin-bottom: 1.35rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <label class="form-label" for="candidateEmail" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main); margin-bottom: 0;">
+            Email Address <span class="required" style="color: var(--danger);">*</span>
+          </label>
+          <span style="font-size: 0.775rem; color: var(--text-muted);">One attempt per candidate</span>
+        </div>
+        <input 
+          type="email" 
+          id="candidateEmail" 
+          name="candidate_email" 
+          class="form-input" 
+          placeholder="e.g. maya@example.com" 
+          required 
+          autocomplete="email"
+          style="width: 100%;"
+        >
+        <div id="emailFeedback" style="display: none; font-size: 0.8rem; margin-top: 0.35rem;"></div>
+      </div>
+
+      <!-- Resume / CV Upload -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label" for="resumeFile" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+          Upload Resume / CV (PDF or DOCX) <span class="required" style="color: var(--danger);">*</span>
+        </label>
+        
+        <div 
+          id="resumeDropZone" 
+          style="border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: var(--bg-muted);"
+        >
+          <input 
+            type="file" 
+            id="resumeFile" 
+            name="resume_file" 
+            accept=".pdf,.docx" 
+            required 
+            style="display: none;"
+          >
+          <div id="dropZonePrompt">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.5rem;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">
+              Click to select or drop your resume here
+            </div>
+            <div style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">
+              PDF or DOCX (Max 10MB)
+            </div>
+          </div>
+          <div id="dropZoneFileInfo" style="display: none;">
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);" id="selectedFileName"></div>
+            <div style="font-size: 0.775rem; color: var(--success); font-weight: 600; margin-top: 0.2rem;" id="selectedFileSize"></div>
+            <button type="button" id="changeFileBtn" style="background: none; border: none; color: var(--primary); font-size: 0.8rem; margin-top: 0.5rem; cursor: pointer; text-decoration: underline;">
+              Choose a different file
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Human Verification Captcha -->
+      <div class="form-group" style="margin-bottom: 1.75rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem;">
+        <label class="form-label" style="font-weight: 600; font-size: 0.875rem; color: var(--text-main); margin-bottom: 0.4rem; display: block;">
+          Verification Challenge <span class="required" style="color: var(--danger);">*</span>
+        </label>
+        
+        <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+          <!-- Captcha Box -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: white; border: 1px solid var(--border-color); padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); user-select: none;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Solve:</span>
+            <span id="captchaQuestionText" style="font-size: 1.05rem; font-weight: 700; color: var(--primary); letter-spacing: 0.05em; font-family: monospace;">
+              {{ captcha_question }}
+            </span>
+            <button 
+              type="button" 
+              id="refreshCaptchaBtn" 
+              title="Refresh Captcha Challenge" 
+              style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 4px; display: inline-flex; align-items: center;"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Answer Input -->
+          <div style="flex: 1; min-width: 140px;">
+            <input 
+              type="text" 
+              id="captchaInput" 
+              name="captcha" 
+              class="form-input" 
+              placeholder="Enter answer" 
+              required 
+              style="width: 100%; text-align: center; font-weight: 600; font-size: 1rem;"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Action Button with Dynamic Loading & Joining States -->
+      <button 
+        type="submit" 
+        id="startInterviewBtn" 
+        class="btn btn-primary btn-lg" 
+        style="width: 100%; justify-content: center; font-size: 1.05rem; font-weight: 600; padding: 0.9rem 1.5rem; transition: all 0.25s ease;"
+      >
+        <span id="btnSpinner" class="spinner-sm" style="display: none; margin-right: 0.65rem;"></span>
+        <span id="btnText">Start Interview</span>
+      </button>
+
+      <!-- Status Subtitle Note -->
+      <p id="btnHelperNote" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.75rem; margin-bottom: 0;">
+        Make sure you are in a quiet room with a working microphone before starting.
+      </p>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("candidateSetupForm");
+    const nameInput = document.getElementById("candidateName");
+    const emailInput = document.getElementById("candidateEmail");
+    const emailFeedback = document.getElementById("emailFeedback");
+    const resumeFileInput = document.getElementById("resumeFile");
+    const resumeDropZone = document.getElementById("resumeDropZone");
+    const dropZonePrompt = document.getElementById("dropZonePrompt");
+    const dropZoneFileInfo = document.getElementById("dropZoneFileInfo");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const selectedFileSize = document.getElementById("selectedFileSize");
+    const changeFileBtn = document.getElementById("changeFileBtn");
+    const captchaInput = document.getElementById("captchaInput");
+    const captchaQuestionText = document.getElementById("captchaQuestionText");
+    const refreshCaptchaBtn = document.getElementById("refreshCaptchaBtn");
+    const startInterviewBtn = document.getElementById("startInterviewBtn");
+    const btnText = document.getElementById("btnText");
+    const btnSpinner = document.getElementById("btnSpinner");
+    const btnHelperNote = document.getElementById("btnHelperNote");
+    const alertBanner = document.getElementById("alertBanner");
+    const alertMessage = document.getElementById("alertMessage");
+
+    let activeLiveUrl = null;
+    let isSubmitting = false;
+
+    // Show error banner
+    function showError(msg) {
+      alertBanner.style.display = "block";
+      alertBanner.style.background = "var(--danger-light)";
+      alertBanner.style.color = "var(--danger)";
+      alertBanner.style.borderColor = "#fecaca";
+      alertMessage.innerText = msg;
+      alertBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function clearError() {
+      alertBanner.style.display = "none";
+      alertMessage.innerText = "";
+    }
+
+    // Refresh math captcha challenge
+    async function loadFreshCaptcha() {
+      try {
+        const res = await fetch("/api/captcha/refresh");
+        if (res.ok) {
+          const data = await res.json();
+          captchaQuestionText.innerText = data.question;
+          captchaInput.value = "";
+        }
+      } catch (err) {
+        console.warn("Notice refreshing captcha:", err);
+      }
+    }
+
+    refreshCaptchaBtn.addEventListener("click", loadFreshCaptcha);
+
+    // Real-time email validation on blur
+    emailInput.addEventListener("blur", async () => {
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email || !email.includes("@")) {
+        emailFeedback.style.display = "none";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.available) {
+            emailFeedback.style.display = "block";
+            emailFeedback.style.color = "var(--danger)";
+            emailFeedback.innerText = data.message;
+            emailInput.style.borderColor = "var(--danger)";
+          } else {
+            emailFeedback.style.display = "block";
+            emailFeedback.style.color = "var(--success)";
+            emailFeedback.innerText = "Email is eligible for interview.";
+            emailInput.style.borderColor = "#a7f3d0";
+          }
+        }
+      } catch (err) {
+        // Silently skip if network check fails
+      }
+    });
+
+    emailInput.addEventListener("input", () => {
+      emailInput.style.borderColor = "";
+      emailFeedback.style.display = "none";
+      clearError();
+    });
+
+    // File Drag & Drop Handlers
+    resumeDropZone.addEventListener("click", () => resumeFileInput.click());
+
+    resumeDropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      resumeDropZone.style.borderColor = "var(--primary)";
+      resumeDropZone.style.background = "var(--primary-light)";
+    });
+
+    resumeDropZone.addEventListener("dragleave", () => {
+      resumeDropZone.style.borderColor = "var(--border-color)";
+      resumeDropZone.style.background = "var(--bg-muted)";
+    });
+
+    resumeDropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      resumeDropZone.style.borderColor = "var(--border-color)";
+      resumeDropZone.style.background = "var(--bg-muted)";
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        resumeFileInput.files = e.dataTransfer.files;
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+
+    resumeFileInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelection(file) {
+      if (!file) return;
+      selectedFileName.innerText = file.name;
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      selectedFileSize.innerText = `Selected: ${sizeMb} MB`;
+      dropZonePrompt.style.display = "none";
+      dropZoneFileInfo.style.display = "block";
+      clearError();
+    }
+
+    changeFileBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      resumeFileInput.click();
+    });
+
+    // Form Submission & Dynamic Button Transition Flow
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // If button is already in "Join Interview" state, navigate immediately
+      if (activeLiveUrl) {
+        window.location.href = activeLiveUrl;
+        return;
+      }
+
+      if (isSubmitting) return;
+
+      clearError();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const captcha = captchaInput.value.trim();
+      const file = resumeFileInput.files[0];
+
+      if (!name) {
+        showError("Please enter your full name.");
+        nameInput.focus();
+        return;
+      }
+
+      if (!email || !email.includes("@")) {
+        showError("Please provide a valid email address.");
+        emailInput.focus();
+        return;
+      }
+
+      if (!file) {
+        showError("Please upload your resume (PDF or DOCX).");
+        return;
+      }
+
+      if (!captcha) {
+        showError("Please solve the verification challenge.");
+        captchaInput.focus();
+        return;
+      }
+
+      // Step 1: Set button to "AI Interviewer is joining the room , Please Wait"
+      isSubmitting = true;
+      startInterviewBtn.disabled = true;
+      btnSpinner.style.display = "inline-block";
+      btnText.innerText = "AI Interviewer is joining the room , Please Wait";
+      btnHelperNote.innerText = "Connecting to Viraya AI voice interviewer and analyzing your CV...";
+
+      const formData = new FormData();
+      formData.append("candidate_name", name);
+      formData.append("candidate_email", email);
+      formData.append("resume_file", file);
+      formData.append("captcha", captcha);
+      formData.append("job_title", "AI developer");
+
+      try {
+        // Step 2: Create interview session
+        const createRes = await fetch("/api/interviews", {
+          method: "POST",
+          body: formData
+        });
+
+        const createData = await createRes.json();
+        if (!createRes.ok) {
+          throw new Error(createData.error || "Failed to initialize interview.");
+        }
+
+        const interviewId = createData.interview_id;
+        const liveUrl = createData.live_url || `/interviews/${interviewId}/live`;
+
+        // Step 3: Generate interview questions & content in background
+        btnText.innerText = "AI Interviewer is joining the room , Please Wait";
+        
+        const prepRes = await fetch(`/api/interviews/${interviewId}/prepare`, {
+          method: "POST"
+        });
+
+        const prepData = await prepRes.json();
+        if (!prepRes.ok) {
+          throw new Error(prepData.error || "Failed to generate interview questions.");
+        }
+
+        // Step 4: Questions ready! Update button to "Join Interview"
+        activeLiveUrl = liveUrl;
+        btnSpinner.style.display = "none";
+        btnText.innerText = "Join Interview";
+        startInterviewBtn.disabled = false;
+        startInterviewBtn.style.background = "#10b981";
+        startInterviewBtn.style.borderColor = "#059669";
+        startInterviewBtn.classList.add("btn-pulse");
+        btnHelperNote.innerText = "AI interviewer is ready! Click Join Interview to enter the live room.";
+
+        // Also add direct click listener
+        startInterviewBtn.onclick = () => {
+          window.location.href = liveUrl;
+        };
+
+      } catch (err) {
+        console.error("Submission error:", err);
+        showError(err.message || "An unexpected error occurred. Please try again.");
+        isSubmitting = false;
+        activeLiveUrl = null;
+        startInterviewBtn.disabled = false;
+        btnSpinner.style.display = "none";
+        btnText.innerText = "Start Interview";
+        startInterviewBtn.style.background = "";
+        startInterviewBtn.style.borderColor = "";
+        startInterviewBtn.classList.remove("btn-pulse");
+        btnHelperNote.innerText = "Make sure you are in a quiet room with a working microphone before starting.";
+        // Refresh captcha on failure
+        loadFreshCaptcha();
+      }
+    });
+  });
+</script>
+{% endblock %}

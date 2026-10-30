@@ -1725,14 +1725,14 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(finalData.error || "Evaluation synthesis failed.");
       }
 
-      // Success: redirect to report
-      window.location.href = finalData.report_url || `/reports/${interviewId}`;
+      // Success: redirect to candidate completion screen
+      window.location.href = finalData.completed_url || `/interviews/${interviewId}/completed`;
 
     } catch (err) {
       console.error("Finalization error:", err);
       if (finalizingModal) finalizingModal.classList.remove("active");
       alert("Evaluation Notice: " + err.message);
-      window.location.href = `/interviews/${interviewId}`;
+      window.location.href = `/interviews/${interviewId}/completed`;
     }
   }
 

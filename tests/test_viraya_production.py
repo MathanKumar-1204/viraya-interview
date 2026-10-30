@@ -49,27 +49,43 @@ def test_create_interview_saves_resume_and_fixes_job_details(client, sample_pdf_
     assert len(resume_res.data) > 0
 
 
-def test_dashboard_renders_resume_button(client, sample_pdf_bytes):
-    """Verify that dashboard renders Resume view button."""
+def test_landing_page_renders_single_page_form(client):
+    """Verify that landing page renders the single candidate setup form."""
+    res = client.get("/")
+    assert res.status_code == 200
+    html = res.get_data(as_text=True)
+    assert "Viraya Company's Interview AI Bot" in html
+    assert "AI developer" in html
+    assert 'name="candidate_name"' in html
+    assert 'name="candidate_email"' in html
+    assert 'name="resume_file"' in html
+    assert 'name="captcha"' in html
+    assert "Start Interview" in html
+    assert 'id="dashboard_llm_provider"' not in html
+    assert 'id="dashboard_voice_engine"' not in html
+
+
+def test_admin_dashboard_renders_resume_button(unauth_client, sample_pdf_bytes):
+    """Verify that admin dashboard renders Resume view button."""
     resume_file = (io.BytesIO(sample_pdf_bytes), "sample_cv.pdf")
-    client.post("/api/interviews", data={
+    res = unauth_client.post("/api/interviews", data={
         "candidate_name": "Arjun Kumar",
+        "candidate_email": "arjun.kumar.unique@example.com",
         "job_title": "AI developer",
         "resume_file": resume_file
     }, content_type="multipart/form-data")
+    assert res.status_code == 201
 
-    dash_res = client.get("/")
-    assert dash_res.status_code == 200
-    html = dash_res.get_data(as_text=True)
+    # Log in as admin
+    unauth_client.post("/login", data={"email": "admin@gmail.com", "password": "admin@2004"}, follow_redirects=True)
+    admin_res = unauth_client.get("/admin/")
+    assert admin_res.status_code == 200
+    html = admin_res.get_data(as_text=True)
 
     # Resume button should be present in actions
     assert "Resume" in html
     assert "/resume" in html
-    assert "Viraya" in html
     assert "AI developer" in html
-    # Engine dropdowns must be absent
-    assert 'id="dashboard_llm_provider"' not in html
-    assert 'id="dashboard_voice_engine"' not in html
 
 
 def test_create_interview_succeeds_with_mongodb_even_if_sqlite_fails(client, sample_pdf_bytes):

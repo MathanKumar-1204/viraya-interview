@@ -305,6 +305,19 @@ class MongoInterview:
         return cls(doc) if doc else None
 
     @classmethod
+    def find_by_email(cls, email: str) -> Optional["MongoInterview"]:
+        """Find an existing interview by candidate email (case-insensitive)."""
+        db = get_mongo_db()
+        if db is None or not email:
+            return None
+        import re
+        clean_email = email.lower().strip()
+        doc = db.interviews.find_one({
+            "candidate_email": {"$regex": f"^{re.escape(clean_email)}$", "$options": "i"}
+        })
+        return cls(doc) if doc else None
+
+    @classmethod
     def find_by_user(cls, user_id: Optional[str] = None) -> List["MongoInterview"]:
         """Find all interviews for a user (or all if user_id is None), ordered by created_at desc."""
         db = get_mongo_db()

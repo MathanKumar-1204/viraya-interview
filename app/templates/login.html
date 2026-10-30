@@ -12,7 +12,7 @@
       Welcome Back
     </h1>
     <p style="color: var(--text-secondary); font-size: 0.925rem;">
-      Viraya Company's Interview AI Bot. Log in to manage candidates, live sessions, and reports.
+      Viraya Administrator Access. Log in to manage candidates, live evaluations, and reports.
     </p>
   </div>
 
@@ -21,13 +21,13 @@
       <input type="hidden" name="next" value="{{ next or '' }}">
 
       <div class="form-group">
-        <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+        <label class="form-label" for="email">Admin Email <span class="required">*</span></label>
         <input 
           type="email" 
           id="email" 
           name="email" 
           class="form-input" 
-          placeholder="e.g. recruiter@viraya.com" 
+          placeholder="admin@gmail.com" 
           value="{{ email or '' }}" 
           required 
           autofocus
@@ -35,13 +35,13 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="password">Password <span class="required">*</span></label>
+        <label class="form-label" for="password">Admin Password <span class="required">*</span></label>
         <input 
           type="password" 
           id="password" 
           name="password" 
           class="form-input" 
-          placeholder="Enter your password" 
+          placeholder="••••••••" 
           required
         >
       </div>
@@ -52,9 +52,9 @@
     </form>
 
     <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
-      Don't have an account yet? 
-      <a href="{{ url_for('auth.signup') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
-        Create Account
+      Are you a candidate interviewing for AI developer? 
+      <a href="{{ url_for('dashboard.index') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+        Start Interview Here (No Login Required)
       </a>
     </div>
   </div>

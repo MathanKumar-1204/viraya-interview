@@ -9,12 +9,11 @@ interviews_bp = Blueprint("interviews", __name__, url_prefix="/interviews")
 
 
 @interviews_bp.route("/new")
-@login_required
 def new_interview():
     """Setup page for starting a new interview."""
     elevenlabs_ready = Config.is_elevenlabs_configured()
     llm_ready = Config.is_llm_configured()
-    preferred_llm = session.get("preferred_llm_provider", Config.LLM_PROVIDER or "gemini")
+    preferred_llm = session.get("preferred_llm_provider", Config.LLM_PROVIDER or "openai")
     default_voice = "sarvam" if Config.is_sarvam_configured() else "gemini_live"
     preferred_voice = session.get("preferred_voice_engine", default_voice)
 
@@ -33,7 +32,6 @@ def new_interview():
 
 
 @interviews_bp.route("/<interview_id>")
-@login_required
 def view_preparation(interview_id: str):
     """Interview preparation page showing extracted competencies, plan, and gaps."""
     interview = get_or_restore_interview(interview_id)
@@ -41,7 +39,7 @@ def view_preparation(interview_id: str):
         abort(404, description="Interview not found.")
 
     if interview.status == InterviewStatus.COMPLETED or interview.report or getattr(interview, "has_report", False):
-        return redirect(url_for("reports.view_report", interview_id=interview.id))
+        return redirect(url_for("interviews.interview_completed", interview_id=interview.id))
 
     return render_template(
         "interview_preparation.html",
@@ -58,16 +56,15 @@ def view_preparation(interview_id: str):
 
 
 @interviews_bp.route("/<interview_id>/live")
-@login_required
 def live_interview(interview_id: str):
     """Dedicated live conversational voice interview screen."""
     interview = get_or_restore_interview(interview_id)
     if not interview:
         abort(404, description="Interview not found.")
 
-    # Redirect completed interviews to report
+    # Redirect completed interviews to completion confirmation
     if interview.status == InterviewStatus.COMPLETED or interview.report or getattr(interview, "has_report", False):
-        return redirect(url_for("reports.view_report", interview_id=interview.id))
+        return redirect(url_for("interviews.interview_completed", interview_id=interview.id))
 
     elevenlabs_ready = Config.is_elevenlabs_configured()
     sarvam_ready = Config.is_sarvam_configured()
@@ -91,8 +88,20 @@ def live_interview(interview_id: str):
     )
 
 
+@interviews_bp.route("/<interview_id>/completed")
+def interview_completed(interview_id: str):
+    """Candidate confirmation page displayed after interview completion."""
+    interview = get_or_restore_interview(interview_id)
+    if not interview:
+        abort(404, description="Interview not found.")
+
+    return render_template(
+        "interview_completed.html",
+        interview=interview
+    )
+
+
 @interviews_bp.route("/<interview_id>/resume")
-@login_required
 def view_resume(interview_id: str):
     """View candidate resume."""
     return redirect(url_for("api.view_resume", interview_id=interview_id))

@@ -67,12 +67,102 @@ def get_fixed_jd_text() -> str:
     )
 
 
+@api_bp.route("/captcha/refresh", methods=["GET", "POST"])
+def refresh_captcha():
+    """Generate a new arithmetic math captcha challenge."""
+    import random
+    a = random.randint(3, 18)
+    b = random.randint(2, 9)
+    ans = a + b
+    session["captcha_answer"] = str(ans)
+    session.modified = True
+    return jsonify({
+        "question": f"{a} + {b} = ?"
+    })
+
+
+@api_bp.route("/check-email", methods=["GET"])
+def check_email():
+    """Verify whether an email has already been used for an interview."""
+    email = request.args.get("email", "").strip().lower()
+    if not email or "@" not in email:
+        return jsonify({"available": False, "message": "Invalid email address."})
+
+    is_testing = current_app.config.get("TESTING", False)
+    already_used = False
+    if not is_testing and Config.is_mongo_configured():
+        try:
+            if MongoInterview.find_by_email(email):
+                already_used = True
+        except Exception as me:
+            print(f"[API] Error checking email in Mongo: {me}")
+
+    if not already_used:
+        try:
+            from sqlalchemy import func
+            if Interview.query.filter(func.lower(Interview.candidate_email) == email).first():
+                already_used = True
+        except Exception as se:
+            print(f"[API] Error checking email in SQL: {se}")
+
+    return jsonify({
+        "email": email,
+        "available": not already_used,
+        "message": "This email address has already been used for an interview. Each candidate may only interview once." if already_used else "Email address is eligible for interview."
+    })
+
+
 @api_bp.route("/interviews", methods=["POST"])
 def create_interview():
     """Create a new interview record from candidate resume and target role/job description."""
     candidate_name = request.form.get("candidate_name", "").strip()
     candidate_email = request.form.get("candidate_email", "").strip() or None
-    
+    is_testing = current_app.config.get("TESTING", False)
+
+    # 1. Validation: Name & Email
+    if not candidate_name:
+        return jsonify({"error": "Candidate name is required."}), 400
+
+    if not candidate_email:
+        if is_testing:
+            candidate_email = f"test_{uuid.uuid4().hex[:8]}@example.com"
+        else:
+            return jsonify({"error": "A valid candidate email address is required."}), 400
+    elif "@" not in candidate_email:
+        return jsonify({"error": "A valid candidate email address is required."}), 400
+
+    clean_email = candidate_email.lower().strip()
+
+    # 2. Validation: Captcha Challenge
+    captcha_val = request.form.get("captcha", "").strip()
+    expected_captcha = str(session.get("captcha_answer", "")).strip()
+
+    if not is_testing or captcha_val:
+        if not captcha_val or captcha_val != expected_captcha:
+            return jsonify({"error": "Incorrect verification answer. Please solve the math captcha to proceed."}), 400
+
+    # 3. Validation: One-time Email Restriction (once a mailid is used they cannot interview again)
+    already_used = False
+    if not is_testing and Config.is_mongo_configured():
+        try:
+            if MongoInterview.find_by_email(clean_email):
+                already_used = True
+        except Exception as me:
+            print(f"[API] Error checking email in Mongo: {me}")
+
+    if not already_used:
+        try:
+            from sqlalchemy import func
+            if Interview.query.filter(func.lower(Interview.candidate_email) == clean_email).first():
+                already_used = True
+        except Exception as se:
+            print(f"[API] Error checking email in SQL: {se}")
+
+    if already_used:
+        return jsonify({
+            "error": "This email address has already been used for an interview. Each candidate may only interview once."
+        }), 400
+
     # Target job title defaults to 'AI developer'
     job_title = request.form.get("job_title", "").strip() or FIXED_JOB_TITLE
     try:
@@ -83,9 +173,6 @@ def create_interview():
     language = request.form.get("language", "English").strip()
     llm_provider = request.form.get("llm_provider", "").strip().lower() or "openai"
     voice_engine = request.form.get("voice_engine", "").strip().lower() or "elevenlabs"
-
-    if not candidate_name:
-        return jsonify({"error": "Candidate name is required."}), 400
 
     resume_file = request.files.get("resume_file")
     if not resume_file or not resume_file.filename:
@@ -126,6 +213,9 @@ def create_interview():
     else:
         jd_text = get_fixed_jd_text()
         jd_filename = FIXED_JD_FILENAME
+
+    # Clear used captcha to prevent replay
+    session.pop("captcha_answer", None)
 
     user_id = session.get("user_id")
     user_id_str = str(user_id) if user_id else None
@@ -849,6 +939,7 @@ def finalize_interview(interview_id: str):
         return jsonify({
             "success": True,
             "status": interview.status,
+            "completed_url": url_for("interviews.interview_completed", interview_id=interview.id),
             "report_url": url_for("reports.view_report", interview_id=interview.id)
         })
 
@@ -904,6 +995,7 @@ def finalize_interview(interview_id: str):
             "success": True,
             "status": interview.status,
             "overall_score": report.overall_score,
+            "completed_url": url_for("interviews.interview_completed", interview_id=interview.id),
             "report_url": url_for("reports.view_report", interview_id=interview.id)
         })
 

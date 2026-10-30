@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Complete - Viraya Company's Interview AI Bot{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 3rem auto; padding: 0 1rem;">
+  <div class="card" style="text-align: center; padding: 3rem 2rem; box-shadow: var(--shadow-lg); border-radius: var(--radius-lg);">
+    
+    <!-- Success Badge / Icon -->
+    <div style="width: 72px; height: 72px; margin: 0 auto 1.5rem; background: var(--success-light); border: 2px solid #a7f3d0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+
+    <!-- Exact Required Heading -->
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--text-main); line-height: 1.35; margin-bottom: 1rem;">
+      Your first interview round is complete. Viraya will reach out to shortlisted candidates for the second round
+    </h1>
+
+    <p style="color: var(--text-secondary); font-size: 1rem; max-width: 540px; margin: 0 auto 2rem; line-height: 1.6;">
+      Thank you for completing your technical assessment for the <b>AI developer</b> position at <b>Viraya Company</b>. Your conversational responses and technical screening data have been safely recorded.
+    </p>
+
+    <!-- Submission Details Card -->
+    <div style="background: var(--bg-muted); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; text-align: left; margin-bottom: 2rem;">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+        Submission Receipt
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+        <div>
+          <span style="font-size: 0.825rem; color: var(--text-muted);">Candidate:</span>
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">
+            {{ interview.candidate_name }}
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 0.825rem; color: var(--text-muted);">Registered Email:</span>
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">
+            {{ interview.candidate_email }}
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 0.825rem; color: var(--text-muted);">Applied Role:</span>
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">
+            AI developer
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 0.825rem; color: var(--text-muted);">Completion Time:</span>
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">
+            {{ interview.completed_at|format_dt }}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
+        <span class="badge badge-success" style="font-size: 0.75rem; padding: 0.2rem 0.55rem;">
+          Recorded & Submitted
+        </span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">
+          Evaluation data has been transferred securely to Viraya talent evaluation team.
+        </span>
+      </div>
+    </div>
+
+    <!-- Return to Home -->
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary" style="font-weight: 600;">
+      Return to Home
+    </a>
+  </div>
+</div>
+{% endblock %}

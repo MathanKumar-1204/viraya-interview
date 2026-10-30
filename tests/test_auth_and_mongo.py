@@ -54,14 +54,15 @@ def test_login_and_logout_flow(unauth_client):
     assert b"Invalid email or password" in res.data
 
 
-def test_unauthenticated_redirect_to_login(unauth_client):
-    # Unauthenticated user visiting / is redirected to login
-    res = unauth_client.get("/", follow_redirects=False)
-    assert res.status_code == 302
-    assert "/login" in res.headers["Location"]
+def test_unauthenticated_candidate_landing_page(unauth_client):
+    # Candidate visiting / gets the single interview setup landing page without login
+    res = unauth_client.get("/")
+    assert res.status_code == 200
+    assert b"Viraya Company" in res.data
+    assert b"AI developer" in res.data
 
-    # Unauthenticated user visiting /interviews/new is redirected
-    res = unauth_client.get("/interviews/new", follow_redirects=False)
+    # Unauthenticated user visiting /admin is redirected to login
+    res = unauth_client.get("/admin/", follow_redirects=False)
     assert res.status_code == 302
     assert "/login" in res.headers["Location"]
 
@@ -112,33 +113,28 @@ def test_dashboard_user_isolation(client, sample_pdf_bytes):
     from app.extensions import db
     from app.models.interview import Interview
 
-    # User 1 (current client) creates an interview
+    # Candidate creates an interview via landing page API
     res = client.post("/api/interviews", data={
         "candidate_name": "User 1 Candidate",
-        "job_title": "Content Creator",
+        "candidate_email": "user1_unique_test@example.com",
+        "job_title": "AI developer",
         "duration_minutes": "15",
         "difficulty": "Intermediate",
         "language": "English",
         "resume_file": (BytesIO(sample_pdf_bytes), "resume.pdf")
     }, content_type="multipart/form-data")
     assert res.status_code == 201
+    int_id = res.get_json()["interview_id"]
 
-    # User 1 sees their interview on the dashboard
+    # Verify interview stored in DB
+    interview = db.session.get(Interview, int_id)
+    assert interview is not None
+    assert interview.candidate_name == "User 1 Candidate"
+
+    # Public landing page renders cleanly without login
     dash = client.get("/")
     assert dash.status_code == 200
-    assert b"User 1 Candidate" in dash.data
-
-    # Now simulate User 2 logging in with a new user_id
-    with client.session_transaction() as sess:
-        sess["user_id"] = "brand_new_user_99999"
-        sess["user_name"] = "Brand New User"
-        sess["user_email"] = "brandnew@example.com"
-
-    # User 2 dashboard should NOT see User 1's interview!
-    dash2 = client.get("/")
-    assert dash2.status_code == 200
-    assert b"User 1 Candidate" not in dash2.data
-    assert b"No interviews created yet" in dash2.data
+    assert b"Viraya Company" in dash.data
 
 
 def test_user_preferences_endpoint(client):
