@@ -216,6 +216,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let autoEndTriggered = false;
+  let isAlexSpeakingClosingVerse = false;
+  let autoFinalizeTimer = null;
 
   function checkIfInterviewCompleted(cleanRole, cleanText) {
     if (autoEndTriggered || isFinalizing) return;
@@ -223,55 +225,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const lower = cleanText.toLowerCase();
 
-    // Check for closing/completion statements from the bot
+    // Check for clear closing/completion statements from the bot
     const completionPhrases = [
       "that concludes all our interview questions",
+      "that concludes our interview questions",
       "that concludes our interview",
+      "that concludes today's interview",
       "that wraps up all our questions",
       "that wraps up our interview",
       "that wraps up all the questions",
       "that's all the questions i have",
       "that is all the questions i have",
-      "all our questions for today",
-      "evaluation report is now being generated",
-      "report is now being generated",
-      "report is being prepared",
-      "evaluation report is now being prepared",
+      "review your responses and reach out",
+      "reach out regarding next steps",
+      "concludes all our interview questions today",
       "concludes the interview",
       "completed all our questions"
     ];
 
     const hasCompletionPhrase = completionPhrases.some(phrase => lower.includes(phrase));
-    const candidateTurnsCount = transcriptTurns.filter(t => t.role === "candidate").length;
-    const isAlexClosing = (lower.includes("conclude") || lower.includes("wrap up") || lower.includes("thank you")) &&
-                          (lower.includes("report") || lower.includes("questions") || lower.includes("today"));
+    const isExplicitClosingVerse = lower.includes("conclude") && (lower.includes("question") || lower.includes("interview") || lower.includes("next steps"));
 
-    if (hasCompletionPhrase || (candidateTurnsCount >= 3 && isAlexClosing)) {
-      console.log("[Interview] Auto-completion triggered by interviewer wrap-up message:", cleanText);
+    if (hasCompletionPhrase || isExplicitClosingVerse) {
+      console.log("[Interview] Auto-completion triggered by interviewer closing statement:", cleanText);
       autoEndTriggered = true;
+      isAlexSpeakingClosingVerse = true;
       triggerAutoFinalization();
     }
   }
 
   function triggerAutoFinalization() {
-    updateAudioStatus("Interview completed. Calling off session and preparing evaluation report...", "#10b981");
+    updateAudioStatus("The interview is over. You can wait for the result from the company side.", "#10b981");
     if (connectionBadge) {
       connectionBadge.className = "badge badge-success";
       connectionBadge.textContent = "Interview Completed";
     }
     if (studioStateTitle) {
-      studioStateTitle.textContent = "Interview Completed";
+      studioStateTitle.textContent = "The Interview is Over";
     }
     if (studioStateSubtitle) {
-      studioStateSubtitle.textContent = "Alex has asked all questions. Calling off the session and synthesizing your evaluation report...";
+      studioStateSubtitle.textContent = "You can wait for the result from the company side. Finalizing your interview session...";
     }
 
-    // Wait 3.5 seconds for final speech synthesis audio to finish playing, then finalize and redirect
-    setTimeout(async () => {
+    // Safety fallback: wait 10 seconds for the entire spoken closing verse to finish playing before finalizing
+    clearTimeout(autoFinalizeTimer);
+    autoFinalizeTimer = setTimeout(async () => {
       if (!isFinalizing) {
+        console.log("[Interview] Auto-finalizing after spoken closing verse buffer...");
         await finalizeAndRedirect("completed");
       }
-    }, 3500);
+    }, 10000);
   }
 
   function escapeHtml(string) {
@@ -387,6 +390,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (liveMonitorDot) liveMonitorDot.style.background = "#10b981";
       if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is listening... Speak your answer now)</span>';
       currentSpokenCandidateText = "";
+
+      if (isAlexSpeakingClosingVerse && !isFinalizing) {
+        clearTimeout(autoFinalizeTimer);
+        autoFinalizeTimer = setTimeout(async () => {
+          if (!isFinalizing) {
+            await finalizeAndRedirect("completed");
+          }
+        }, 2500);
+        return;
+      }
 
       if (onComplete) onComplete();
     };
@@ -796,6 +809,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (liveMonitorDot) liveMonitorDot.style.background = "#10b981";
       if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is listening... Speak your answer now)</span>';
       currentSpokenCandidateText = "";
+
+      if (isAlexSpeakingClosingVerse && !isFinalizing) {
+        clearTimeout(autoFinalizeTimer);
+        autoFinalizeTimer = setTimeout(async () => {
+          if (!isFinalizing) {
+            await finalizeAndRedirect("completed");
+          }
+        }, 2500);
+        return;
+      }
 
       if (onComplete) onComplete();
     };
@@ -1596,7 +1619,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 connectionBadge.className = "badge badge-indigo";
                 connectionBadge.textContent = "Alex is Speaking";
               }
-              updateAudioStatus("Alex is speaking...", "#6366f1");
+              if (isAlexSpeakingClosingVerse) {
+                updateAudioStatus("Alex is delivering closing verse...", "#10b981");
+              } else {
+                updateAudioStatus("Alex is speaking...", "#6366f1");
+              }
             } else if (mode === "listening") {
               if (voiceOrb) voiceOrb.className = "pulsing-orb listening";
               if (orbIcon) orbIcon.textContent = "🗣️";
@@ -1605,6 +1632,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 connectionBadge.textContent = "Listening to You";
               }
               updateAudioStatus("Listening • Speak into your microphone", "#10b981");
+
+              // If Alex was speaking the closing verse and now finished speaking
+              if (isAlexSpeakingClosingVerse && !isFinalizing) {
+                console.log("[Interview] Alex finished speaking closing verse. Waiting 2.5s before final redirect...");
+                clearTimeout(autoFinalizeTimer);
+                autoFinalizeTimer = setTimeout(async () => {
+                  if (!isFinalizing) {
+                    await finalizeAndRedirect("completed");
+                  }
+                }, 2500);
+              }
             }
           },
           onMessage: (messagePayload) => {

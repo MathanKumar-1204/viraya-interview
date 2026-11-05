@@ -239,6 +239,75 @@ class ElevenLabsService:
         except requests.exceptions.RequestException as e:
             raise ElevenLabsAPIError(f"Error fetching conversation transcript from ElevenLabs: {str(e)}")
 
+    def fetch_conversation_analysis(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch complete conversation analysis, criteria results, and scoring metrics directly from ElevenLabs API.
+        URL: GET /v1/convai/conversations/{conversation_id}
+        """
+        if not self.api_key or self.api_key.startswith("your_") or not conversation_id:
+            return None
+
+        url = f"{self.BASE_URL}/convai/conversations/{conversation_id}"
+        headers = {
+            "xi-api-key": self.api_key,
+            "Accept": "application/json"
+        }
+
+        try:
+            response = requests.get(url, headers=headers, timeout=12)
+            if not response.ok:
+                return None
+
+            data = response.json()
+            analysis = data.get("analysis") or {}
+            metadata = data.get("metadata") or {}
+
+            criteria_results = analysis.get("evaluation_criteria_results") or {}
+            call_successful = analysis.get("call_successful")
+            call_success_score = analysis.get("call_success_score")
+            transcript_summary = analysis.get("transcript_summary") or ""
+
+            elevenlabs_score = None
+            if call_success_score is not None:
+                try:
+                    num_score = float(call_success_score)
+                    elevenlabs_score = int(round(num_score * 100 if num_score <= 1.0 else num_score))
+                except (ValueError, TypeError):
+                    pass
+
+            # Calculate score from ElevenLabs evaluation criteria if present
+            if elevenlabs_score is None and criteria_results:
+                points = []
+                for crit_id, crit_val in criteria_results.items():
+                    res = crit_val.get("result") if isinstance(crit_val, dict) else crit_val
+                    if res == "success":
+                        points.append(88)
+                    elif res == "failure":
+                        points.append(48)
+                    elif res == "unknown":
+                        points.append(65)
+                if points:
+                    elevenlabs_score = round(sum(points) / len(points))
+
+            if elevenlabs_score is None and call_successful:
+                if call_successful == "success":
+                    elevenlabs_score = 85
+                elif call_successful == "failure":
+                    elevenlabs_score = 45
+
+            return {
+                "conversation_id": conversation_id,
+                "analysis": analysis,
+                "criteria_results": criteria_results,
+                "call_successful": call_successful,
+                "transcript_summary": transcript_summary,
+                "elevenlabs_score": elevenlabs_score,
+                "call_duration_secs": metadata.get("call_duration_secs", 0)
+            }
+        except Exception as e:
+            print(f"[ElevenLabsService] Could not fetch conversation analysis: {e}")
+            return None
+
     @staticmethod
     def verify_webhook_signature(payload: bytes, signature_header: str, secret: str) -> bool:
         """Verify HMAC SHA-256 signature on incoming webhooks from ElevenLabs."""

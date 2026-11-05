@@ -48,23 +48,29 @@ Evaluate the candidate across five standardized Performance Dimensions:
    Assess fit against the AI developer role requirements at Viraya Company.
 
 BENCHMARK SCORING CRITERIA (0 to 100 for each dimension):
-- 90 - 100 (Exceptional): Deep authoritative mastery, quantified business/engineering impact, proactive trade-off analysis.
-- 75 - 89 (Proficient / Strong Hire): Clear, relevant answers with solid examples and demonstrated hands-on experience.
+- 90 - 100 (Exceptional): Deep authoritative mastery, quantified engineering impact, thorough architectural reasoning and trade-off analysis.
+- 75 - 89 (Proficient / Strong Hire): Clear, relevant answers with concrete technical examples and demonstrated hands-on experience.
 - 60 - 74 (Developing / Inconsistent): Basic theoretical knowledge, but answers were high-level, lacked depth, or relied on generic descriptions.
-- Below 60 (Significant Gap): Faltered on fundamental questions, gave evasive or incorrect responses, or demonstrated critical skill gaps.
+- Below 60 (Significant Gap): Faltered on fundamental questions, gave evasive, extremely brief, or incorrect responses, or demonstrated critical skill gaps.
 - If a dimension was genuinely not tested or discussed at all, score can be marked null (Not Assessed).
+
+CRITICAL DYNAMIC SCORING MANDATE:
+- DO NOT anchor to any default numbers like 77, 80, or 35. Every candidate must receive an authentic score based strictly on the depth, accuracy, and completeness of their spoken answers.
+- If the candidate provided thorough, detailed, and technically sophisticated responses with real-world examples, score them appropriately in the 80s or 90s.
+- If the candidate provided surface-level, brief, hesitant, or incomplete answers, score them proportionately lower (e.g. 40s, 50s, or 60s).
+- Ensure each dimension is scored independently based on direct evidence from the transcript.
 
 OUTPUT SCHEMA (Return ONLY valid JSON conforming to EvaluationReportSchema at the root level):
 {
   "overall_summary": "Thorough, honest 3-4 sentence hiring manager executive review of the candidate's performance, technical depth, and hiring recommendation at Viraya Company.",
-  "overall_score": 78, // Integer 0-100 calculated from weighted dimension scores
+  "overall_score": 0, // DYNAMIC integer 0-100 calculated from weighted dimension scores
   "competency_scores": [
     {
       "id": "domain_mastery",
       "name": "Domain & Technical Mastery",
-      "score": 82, // 0 to 100
+      "score": 0, // DYNAMIC integer 0 to 100 based on candidate technical depth in transcript
       "weight": 30,
-      "benchmark_level": "Proficient", // "Exceptional", "Proficient", "Developing", or "Significant Gap"
+      "benchmark_level": "Developing", // "Exceptional", "Proficient", "Developing", or "Significant Gap"
       "rationale": "Clear, evidence-backed evaluation derived dynamically from candidate answers in this specific transcript.",
       "supporting_quote": "Direct quote from the candidate's transcript illustrating their capability or gap.",
       "improvement_recommendation": "Highly actionable, concrete suggestion for how the candidate can strengthen this skill."
@@ -72,9 +78,9 @@ OUTPUT SCHEMA (Return ONLY valid JSON conforming to EvaluationReportSchema at th
     {
       "id": "problem_solving",
       "name": "Problem Solving & Situational Reasoning",
-      "score": 75,
+      "score": 0, // DYNAMIC integer 0 to 100 based on situational scenario breakdown
       "weight": 25,
-      "benchmark_level": "Proficient",
+      "benchmark_level": "Developing",
       "rationale": "Dynamic evaluation of candidate reasoning through the situational scenarios.",
       "supporting_quote": "Direct quote from candidate answering the situational scenario.",
       "improvement_recommendation": "Actionable feedback on handling edge cases or trade-offs."
@@ -82,7 +88,7 @@ OUTPUT SCHEMA (Return ONLY valid JSON conforming to EvaluationReportSchema at th
     {
       "id": "execution_impact",
       "name": "Practical Execution & Project Ownership",
-      "score": 70,
+      "score": 0, // DYNAMIC integer 0 to 100 based on hands-on project claims
       "weight": 20,
       "benchmark_level": "Developing",
       "rationale": "Evaluation of personal contribution and hands-on tool usage.",
@@ -92,9 +98,9 @@ OUTPUT SCHEMA (Return ONLY valid JSON conforming to EvaluationReportSchema at th
     {
       "id": "communication_clarity",
       "name": "Communication & Technical Articulation",
-      "score": 80,
+      "score": 0, // DYNAMIC integer 0 to 100 based on clarity and structure
       "weight": 15,
-      "benchmark_level": "Proficient",
+      "benchmark_level": "Developing",
       "rationale": "Clarity, conciseness, and structured technical explanations.",
       "supporting_quote": "Direct quote from candidate.",
       "improvement_recommendation": "Suggestions for more structured delivery."
@@ -102,9 +108,9 @@ OUTPUT SCHEMA (Return ONLY valid JSON conforming to EvaluationReportSchema at th
     {
       "id": "role_calibration",
       "name": "Role & Requirement Alignment",
-      "score": 75,
+      "score": 0, // DYNAMIC integer 0 to 100 based on JD alignment
       "weight": 10,
-      "benchmark_level": "Proficient",
+      "benchmark_level": "Developing",
       "rationale": "Fit for Viraya Company's AI developer position.",
       "supporting_quote": "Direct quote from candidate.",
       "improvement_recommendation": "Specific alignment recommendations."

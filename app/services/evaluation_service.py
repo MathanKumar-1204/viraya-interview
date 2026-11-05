@@ -127,9 +127,10 @@ class EvaluationService:
                 if t.get("role") not in ("interviewer", "agent") and t.get("message", "").strip()
             ]
             total_words = sum(len(t.get("message", "").split()) for t in candidate_turns)
-            # If the session was prematurely ended or candidate gave extremely brief answers (< 40 words total)
+            # Dynamic proportional scaling based on candidate response substance
             if len(candidate_turns) < 2 or total_words < 40:
-                raw_overall = min(raw_overall, 35)
+                volume_scale = max(0.35, min(1.0, total_words / 60.0))
+                raw_overall = round(raw_overall * volume_scale)
 
         return max(0, min(100, raw_overall))
 
@@ -180,12 +181,24 @@ class EvaluationService:
 
         report_data = self.llm.generate_json(system_prompt, user_prompt, EvaluationReportSchema)
 
-        # Calculate calibrated overall score
+        # Calculate calibrated overall score from candidate spoken answers against rubric
         calculated_overall = self.calculate_weighted_overall_score(
             report_data.competency_scores,
             transcript=interview.transcript
         )
         report_data.overall_score = calculated_overall
+
+        # Synchronize benchmark levels with calibrated scores
+        for c in report_data.competency_scores:
+            if c.score is not None:
+                if c.score >= 90:
+                    c.benchmark_level = "Exceptional"
+                elif c.score >= 75:
+                    c.benchmark_level = "Proficient"
+                elif c.score >= 60:
+                    c.benchmark_level = "Developing"
+                else:
+                    c.benchmark_level = "Significant Gap"
 
         # Create InterviewReport model
         report = InterviewReport(
