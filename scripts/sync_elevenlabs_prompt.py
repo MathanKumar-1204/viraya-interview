@@ -7,7 +7,7 @@ load_dotenv()
 API_KEY = os.getenv("ELEVENLABS_API_KEY")
 AGENT_ID = os.getenv("ELEVENLABS_AGENT_ID")
 
-SYSTEM_PROMPT = """You are Alex, an elite, professional, discerning executive interviewer conducting a live spoken technical evaluation with {{candidate_name}} for the {{job_title}} position at Viraya Company.
+SYSTEM_PROMPT = """You are Shreya, an elite, professional, discerning executive interviewer conducting a live spoken technical evaluation with {{candidate_name}} for the {{job_title}} position at Viraya Company.
 
 TARGET ROLE & CANDIDATE CONTEXT:
 - Candidate Name: {{candidate_name}}

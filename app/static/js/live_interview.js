@@ -16,7 +16,7 @@ let transcriptTurns = [];
 let conversationId = null;
 
 // Gemini Flash Live voice states
-let isAlexSpeaking = false;
+let isShreyaSpeaking = false;
 let isWaitingForAiReply = false;
 let recognitionInstance = null;
 let isRecognizing = false;
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const msgEl = document.createElement("div");
     msgEl.className = `transcript-message ${cleanRole}`;
 
-    const roleLabel = cleanRole === "interviewer" ? "Alex (AI Interviewer)" : (candidateName || "Candidate");
+    const roleLabel = cleanRole === "interviewer" ? "Shreya (AI Interviewer)" : (candidateName || "Candidate");
     msgEl.innerHTML = `
       <div class="message-role">${escapeHtml(roleLabel)} <span style="font-weight: normal; font-size: 0.7rem; color: var(--text-muted);">• ${formatTime(elapsedSeconds)}</span></div>
       <div>${escapeHtml(cleanText)}</div>
@@ -216,7 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let autoEndTriggered = false;
-  let isAlexSpeakingClosingVerse = false;
+  let isShreyaSpeakingClosingVerse = false;
   let autoFinalizeTimer = null;
 
   function checkIfInterviewCompleted(cleanRole, cleanText) {
@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hasCompletionPhrase || isExplicitClosingVerse) {
       console.log("[Interview] Auto-completion triggered by interviewer closing statement:", cleanText);
       autoEndTriggered = true;
-      isAlexSpeakingClosingVerse = true;
+      isShreyaSpeakingClosingVerse = true;
       triggerAutoFinalization();
     }
   }
@@ -324,31 +324,31 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    isAlexSpeaking = true;
+    isShreyaSpeaking = true;
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
 
-    // Stop candidate recognition while Alex speaks to prevent self-echo
+    // Stop candidate recognition while Shreya speaks to prevent self-echo
     stopGeminiRecognition();
 
     if (voiceOrb) voiceOrb.className = "pulsing-orb speaking";
     if (orbIcon) orbIcon.textContent = "🎙️";
     if (connectionBadge) {
       connectionBadge.className = "badge badge-indigo";
-      connectionBadge.textContent = "Alex is Speaking";
+      connectionBadge.textContent = "Shreya is Speaking";
     }
-    updateAudioStatus("Alex is speaking aloud...", "#6366f1");
+    updateAudioStatus("Shreya is speaking aloud...", "#6366f1");
 
-    if (liveMonitorStateText) liveMonitorStateText.textContent = "🔊 Alex is speaking aloud...";
+    if (liveMonitorStateText) liveMonitorStateText.textContent = "🔊 Shreya is speaking aloud...";
     if (liveMonitorDot) liveMonitorDot.style.background = "#6366f1";
-    if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is speaking...)</span>';
+    if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Shreya is speaking...)</span>';
     if (doneSpeakingBtn) doneSpeakingBtn.style.display = "none";
     if (livePauseIndicator) livePauseIndicator.style.display = "none";
 
     if (!window.speechSynthesis) {
       // Browser does not support speech synthesis
-      isAlexSpeaking = false;
+      isShreyaSpeaking = false;
       if (onComplete) onComplete();
       return;
     }
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const finalizeTurn = () => {
       if (hasEnded) return;
       hasEnded = true;
-      isAlexSpeaking = false;
+      isShreyaSpeaking = false;
       if (!isCallActive) return;
 
       if (voiceOrb) voiceOrb.className = "pulsing-orb listening";
@@ -388,10 +388,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (liveMonitorStateText) liveMonitorStateText.textContent = "🎙️ Listening to you... Speak into your microphone";
       if (liveMonitorDot) liveMonitorDot.style.background = "#10b981";
-      if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is listening... Speak your answer now)</span>';
+      if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Shreya is listening... Speak your answer now)</span>';
       currentSpokenCandidateText = "";
 
-      if (isAlexSpeakingClosingVerse && !isFinalizing) {
+      if (isShreyaSpeakingClosingVerse && !isFinalizing) {
         clearTimeout(autoFinalizeTimer);
         autoFinalizeTimer = setTimeout(async () => {
           if (!isFinalizing) {
@@ -437,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let finalAccumulated = "";
 
       recognitionInstance.onresult = (event) => {
-        if (!isCallActive || isAlexSpeaking || isWaitingForAiReply) return;
+        if (!isCallActive || isShreyaSpeaking || isWaitingForAiReply) return;
 
         let interim = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -463,13 +463,13 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (livePauseIndicator) {
             livePauseIndicator.style.display = "block";
-            livePauseIndicator.textContent = "⏳ Pause detected — submitting answer to Alex...";
+            livePauseIndicator.textContent = "⏳ Pause detected — submitting answer to Shreya...";
           }
 
           clearTimeout(speechSilenceTimer);
           // Automatically send turn when candidate pauses for 1.3 seconds
           speechSilenceTimer = setTimeout(() => {
-            if (candidateText && isCallActive && !isAlexSpeaking && !isWaitingForAiReply) {
+            if (candidateText && isCallActive && !isShreyaSpeaking && !isWaitingForAiReply) {
               const toSend = candidateText;
               finalAccumulated = "";
               currentSpokenCandidateText = "";
@@ -493,7 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       recognitionInstance.onend = () => {
         isRecognizing = false;
-        if (isCallActive && !isAlexSpeaking && !isWaitingForAiReply) {
+        if (isCallActive && !isShreyaSpeaking && !isWaitingForAiReply) {
           try {
             recognitionInstance.start();
             isRecognizing = true;
@@ -582,11 +582,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (orbIcon) orbIcon.textContent = "🧠";
     if (connectionBadge) {
       connectionBadge.className = "badge badge-indigo";
-      connectionBadge.textContent = "Alex is Thinking...";
+      connectionBadge.textContent = "Shreya is Thinking...";
     }
-    updateAudioStatus("Alex is formulating response...", "#6366f1");
+    updateAudioStatus("Shreya is formulating response...", "#6366f1");
 
-    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Alex is formulating response...";
+    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Shreya is formulating response...";
     if (liveMonitorDot) liveMonitorDot.style.background = "#6366f1";
     if (liveTranscriptDisplay) {
       liveTranscriptDisplay.innerHTML = `<span style="color: #4f46e5; font-weight: 600;">✓ Sent: "${escapeHtml(candidateMessage.trim())}"</span>`;
@@ -771,7 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    isAlexSpeaking = true;
+    isShreyaSpeaking = true;
 
     if (voiceOrb) {
       voiceOrb.className = "pulsing-orb speaking";
@@ -780,18 +780,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (orbIcon) orbIcon.textContent = "🎙️";
     if (connectionBadge) {
       connectionBadge.className = "badge badge-indigo";
-      connectionBadge.textContent = "Alex is Speaking";
+      connectionBadge.textContent = "Shreya is Speaking";
     }
-    updateAudioStatus("Alex is speaking aloud (Sarvam Bulbul)...", "#6366f1");
+    updateAudioStatus("Shreya is speaking aloud (Sarvam Bulbul)...", "#6366f1");
 
-    if (liveMonitorStateText) liveMonitorStateText.textContent = "🔊 Alex is speaking (Sarvam Bulbul)...";
+    if (liveMonitorStateText) liveMonitorStateText.textContent = "🔊 Shreya is speaking (Sarvam Bulbul)...";
     if (liveMonitorDot) liveMonitorDot.style.background = "#6366f1";
-    if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is speaking...)</span>';
+    if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Shreya is speaking...)</span>';
     if (doneSpeakingBtn) doneSpeakingBtn.style.display = "none";
     if (livePauseIndicator) livePauseIndicator.style.display = "none";
 
     const afterSpeech = () => {
-      isAlexSpeaking = false;
+      isShreyaSpeaking = false;
       if (!isCallActive) return;
 
       if (voiceOrb) {
@@ -807,10 +807,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (liveMonitorStateText) liveMonitorStateText.textContent = "🎙️ Listening to you... Speak into your microphone";
       if (liveMonitorDot) liveMonitorDot.style.background = "#10b981";
-      if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is listening... Speak your answer now)</span>';
+      if (liveTranscriptDisplay) liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Shreya is listening... Speak your answer now)</span>';
       currentSpokenCandidateText = "";
 
-      if (isAlexSpeakingClosingVerse && !isFinalizing) {
+      if (isShreyaSpeakingClosingVerse && !isFinalizing) {
         clearTimeout(autoFinalizeTimer);
         autoFinalizeTimer = setTimeout(async () => {
           if (!isFinalizing) {
@@ -838,7 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function startSarvamListeningTurn() {
-    if (!isCallActive || isWaitingForAiReply || isAlexSpeaking) return;
+    if (!isCallActive || isWaitingForAiReply || isShreyaSpeaking) return;
 
     sarvamHasSpokenInTurn = false;
     sarvamRecordedChunks = [];
@@ -859,7 +859,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (liveMonitorStateText) liveMonitorStateText.textContent = "🎙️ Listening to you... Speak into your microphone";
     if (liveMonitorDot) liveMonitorDot.style.background = "#10b981";
     if (liveTranscriptDisplay) {
-      liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Alex is listening... Speak your answer now)</span>';
+      liveTranscriptDisplay.innerHTML = '<span style="color: var(--text-muted); font-style: italic;">(Shreya is listening... Speak your answer now)</span>';
     }
     if (doneSpeakingBtn) doneSpeakingBtn.style.display = "none";
     if (livePauseIndicator) livePauseIndicator.style.display = "none";
@@ -887,7 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
           sendCandidateAudioToSarvam(blob);
         } else {
           sarvamRecordedChunks = [];
-          if (isCallActive && !isWaitingForAiReply && !isAlexSpeaking) {
+          if (isCallActive && !isWaitingForAiReply && !isShreyaSpeaking) {
             setTimeout(startSarvamListeningTurn, 300);
           }
         }
@@ -904,12 +904,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function monitorSarvamMicrophone() {
-    if (!isCallActive || isWaitingForAiReply || isAlexSpeaking || !sarvamAnalyser) return;
+    if (!isCallActive || isWaitingForAiReply || isShreyaSpeaking || !sarvamAnalyser) return;
 
     const dataArray = new Uint8Array(sarvamAnalyser.frequencyBinCount);
 
     const checkVolume = () => {
-      if (!isCallActive || isWaitingForAiReply || isAlexSpeaking || !sarvamMediaRecorder || sarvamMediaRecorder.state !== "recording") {
+      if (!isCallActive || isWaitingForAiReply || isShreyaSpeaking || !sarvamMediaRecorder || sarvamMediaRecorder.state !== "recording") {
         return;
       }
 
@@ -952,7 +952,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!sarvamSilenceTimer) {
             if (livePauseIndicator) {
               livePauseIndicator.style.display = "block";
-              livePauseIndicator.textContent = "⏳ Pause detected — submitting answer to Alex...";
+              livePauseIndicator.textContent = "⏳ Pause detected — submitting answer to Shreya...";
             }
             sarvamSilenceTimer = setTimeout(() => {
               stopSarvamRecordingAndSend();
@@ -999,11 +999,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (orbIcon) orbIcon.textContent = "🧠";
     if (connectionBadge) {
       connectionBadge.className = "badge badge-amber";
-      connectionBadge.textContent = "Alex is Thinking...";
+      connectionBadge.textContent = "Shreya is Thinking...";
     }
-    updateAudioStatus("Alex is formulating response (Sarvam Saaras STT)...", "#f59e0b");
+    updateAudioStatus("Shreya is formulating response (Sarvam Saaras STT)...", "#f59e0b");
 
-    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Alex is transcribing & thinking...";
+    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Shreya is transcribing & thinking...";
     if (liveMonitorDot) liveMonitorDot.style.background = "#f59e0b";
     if (liveTranscriptDisplay) {
       liveTranscriptDisplay.innerHTML = '<span style="color: #6366f1; font-style: italic;">Transcribing your voice with Sarvam Saaras AI...</span>';
@@ -1040,13 +1040,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      const alexText = data.response_text;
+      const shreyaText = data.response_text;
       const audioB64 = data.audio_base64;
 
-      appendTranscriptTurn("interviewer", alexText);
+      appendTranscriptTurn("interviewer", shreyaText);
 
       isWaitingForAiReply = false;
-      speakSarvamTurn(alexText, audioB64, () => {
+      speakSarvamTurn(shreyaText, audioB64, () => {
         startSarvamListeningTurn();
       });
 
@@ -1079,7 +1079,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (studioStateSubtitle) {
       studioStateSubtitle.textContent =
-        "Alex is conducting your spoken interview powered by Sarvam AI. Speak naturally into your microphone.";
+        "Shreya is conducting your spoken interview powered by Sarvam AI. Speak naturally into your microphone.";
     }
 
     startTimer();
@@ -1093,7 +1093,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const greetingText = creds.text || `Hello ${candidateName}! Welcome to your interview for the ${jobTitle} position. I am Alex, your interviewer today. To get started, could you please explain a bit about yourself and walk me through your CV?`;
+    const greetingText = creds.text || `Hello ${candidateName}! Welcome to your interview for the ${jobTitle} position. I am Shreya, your interviewer today. To get started, could you please explain a bit about yourself and walk me through your CV?`;
     const greetingAudio = creds.audio_base64 || null;
 
     appendTranscriptTurn("interviewer", greetingText);
@@ -1121,11 +1121,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (orbIcon) orbIcon.textContent = "🧠";
     if (connectionBadge) {
       connectionBadge.className = "badge badge-amber";
-      connectionBadge.textContent = "Alex is Thinking...";
+      connectionBadge.textContent = "Shreya is Thinking...";
     }
-    updateAudioStatus("Alex is formulating response...", "#f59e0b");
+    updateAudioStatus("Shreya is formulating response...", "#f59e0b");
 
-    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Alex is formulating response...";
+    if (liveMonitorStateText) liveMonitorStateText.textContent = "🧠 Shreya is formulating response...";
     if (liveMonitorDot) liveMonitorDot.style.background = "#f59e0b";
     if (liveTranscriptDisplay) {
       liveTranscriptDisplay.innerHTML = `<span style="color: #4f46e5; font-weight: 600;">✓ Sent: "${escapeHtml(candidateMessage.trim())}"</span>`;
@@ -1148,13 +1148,13 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data.error || "Sarvam turn failed.");
       }
 
-      const alexText = data.response_text;
+      const shreyaText = data.response_text;
       const audioB64 = data.audio_base64;
 
-      appendTranscriptTurn("interviewer", alexText);
+      appendTranscriptTurn("interviewer", shreyaText);
 
       isWaitingForAiReply = false;
-      speakSarvamTurn(alexText, audioB64, () => {
+      speakSarvamTurn(shreyaText, audioB64, () => {
         startSarvamListeningTurn();
       });
 
@@ -1225,9 +1225,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (orbIcon) orbIcon.textContent = "🧠";
         if (connectionBadge) {
           connectionBadge.className = "badge badge-indigo";
-          connectionBadge.textContent = "Alex is Listening / Formulating...";
+          connectionBadge.textContent = "Shreya is Listening / Formulating...";
         }
-        updateAudioStatus("Alex is processing your response...", "#6366f1");
+        updateAudioStatus("Shreya is processing your response...", "#6366f1");
         break;
 
       // Candidate transcription completed by Whisper
@@ -1245,9 +1245,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (orbIcon) orbIcon.textContent = "🎙️";
         if (connectionBadge) {
           connectionBadge.className = "badge badge-indigo";
-          connectionBadge.textContent = "Alex is Speaking";
+          connectionBadge.textContent = "Shreya is Speaking";
         }
-        updateAudioStatus("Alex is speaking aloud...", "#6366f1");
+        updateAudioStatus("Shreya is speaking aloud...", "#6366f1");
         currentAiTurnAccumulator = "";
         break;
 
@@ -1262,7 +1262,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case "response.audio_transcript.done":
         const completedText = (event.transcript || currentAiTurnAccumulator || "").trim();
         if (completedText) {
-          console.log("[OpenAI Realtime] Alex transcript:", completedText);
+          console.log("[OpenAI Realtime] Shreya transcript:", completedText);
           appendTranscriptTurn("interviewer", completedText);
         }
         currentAiTurnAccumulator = "";
@@ -1370,7 +1370,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (studioStateSubtitle) {
             studioStateSubtitle.textContent =
-              "Alex is conducting your spoken interview powered by Gemini Flash Live. Speak your answer into your microphone.";
+              "Shreya is conducting your spoken interview powered by Gemini Flash Live. Speak your answer into your microphone.";
           }
 
           startTimer();
@@ -1378,7 +1378,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Speak initial opening greeting from Gemini
           const rawGreeting = creds.greeting ? creds.greeting.message : 
-            `Hello ${candidateName}! Welcome to your spoken interview for the ${jobTitle} role. I'm Alex. To get started, could you please introduce yourself and tell me what interests you most about this position?`;
+            `Hello ${candidateName}! Welcome to your spoken interview for the ${jobTitle} role. I'm Shreya. To get started, could you please introduce yourself and tell me what interests you most about this position?`;
           const initialGreeting = extractCleanSpokenText(rawGreeting);
 
           appendTranscriptTurn("interviewer", initialGreeting);
@@ -1439,7 +1439,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (studioStateSubtitle) {
               studioStateSubtitle.textContent =
-                "Alex is speaking with you live over low-latency WebRTC. Speak naturally into your microphone; Alex will listen and you can interrupt anytime.";
+                "Shreya is speaking with you live over low-latency WebRTC. Speak naturally into your microphone; Shreya will listen and you can interrupt anytime.";
             }
 
             if (connectionBadge) {
@@ -1448,13 +1448,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             updateAudioStatus("Connected • Realtime audio active", "#10b981");
 
-            // Trigger initial opening greeting from Alex
+            // Trigger initial opening greeting from Shreya
             try {
               const triggerGreeting = {
                 type: "response.create",
                 response: {
                   modalities: ["audio", "text"],
-                  instructions: `Greet ${candidateName} warmly for their interview for the ${jobTitle} role, introduce yourself as Alex, and ask the first opening question.`
+                  instructions: `Greet ${candidateName} warmly for their interview for the ${jobTitle} role, introduce yourself as Shreya, and ask the first opening question.`
                 }
               };
               dataChannel.send(JSON.stringify(triggerGreeting));
@@ -1582,7 +1582,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (studioStateSubtitle) {
               studioStateSubtitle.textContent =
-                "Alex (AI Interviewer) is conducting your spoken interview. Speak clearly into your microphone.";
+                "Shreya (AI Interviewer) is conducting your spoken interview. Speak clearly into your microphone.";
             }
 
             updateAudioStatus("Connected • Voice stream active", "#10b981");
@@ -1617,12 +1617,12 @@ document.addEventListener("DOMContentLoaded", () => {
               if (orbIcon) orbIcon.textContent = "🎙️";
               if (connectionBadge) {
                 connectionBadge.className = "badge badge-indigo";
-                connectionBadge.textContent = "Alex is Speaking";
+                connectionBadge.textContent = "Shreya is Speaking";
               }
-              if (isAlexSpeakingClosingVerse) {
-                updateAudioStatus("Alex is delivering closing verse...", "#10b981");
+              if (isShreyaSpeakingClosingVerse) {
+                updateAudioStatus("Shreya is delivering closing verse...", "#10b981");
               } else {
-                updateAudioStatus("Alex is speaking...", "#6366f1");
+                updateAudioStatus("Shreya is speaking...", "#6366f1");
               }
             } else if (mode === "listening") {
               if (voiceOrb) voiceOrb.className = "pulsing-orb listening";
@@ -1633,9 +1633,9 @@ document.addEventListener("DOMContentLoaded", () => {
               }
               updateAudioStatus("Listening • Speak into your microphone", "#10b981");
 
-              // If Alex was speaking the closing verse and now finished speaking
-              if (isAlexSpeakingClosingVerse && !isFinalizing) {
-                console.log("[Interview] Alex finished speaking closing verse. Waiting 2.5s before final redirect...");
+              // If Shreya was speaking the closing verse and now finished speaking
+              if (isShreyaSpeakingClosingVerse && !isFinalizing) {
+                console.log("[Interview] Shreya finished speaking closing verse. Waiting 2.5s before final redirect...");
                 clearTimeout(autoFinalizeTimer);
                 autoFinalizeTimer = setTimeout(async () => {
                   if (!isFinalizing) {
@@ -1693,7 +1693,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const candidateTurns = transcriptTurns.filter((t) => t.role === "candidate");
       if (candidateTurns.length === 0 && transcriptTurns.length < 2) {
         const proceed = confirm(
-          "Notice: Alex and you haven't exchanged enough answers yet for a thorough evaluation.\n\n" +
+          "Notice: Shreya and you haven't exchanged enough answers yet for a thorough evaluation.\n\n" +
           "Are you sure you want to conclude the session and generate the report now?"
         );
         if (!proceed) return;

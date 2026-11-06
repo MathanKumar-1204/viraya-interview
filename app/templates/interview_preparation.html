@@ -262,7 +262,7 @@
       {% for turn in interview.transcript %}
         <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); background: {% if turn.role in ('candidate', 'user') %}#f0fdf4; border: 1px solid #bbf7d0; align-self: flex-end; margin-left: 2rem;{% else %}#f8fafc; border: 1px solid var(--border-color); align-self: flex-start; margin-right: 2rem;{% endif %}; max-width: 85%;">
           <div style="font-size: 0.75rem; font-weight: 700; color: {% if turn.role in ('candidate', 'user') %}#16a34a{% else %}#4f46e5{% endif %}; margin-bottom: 0.25rem;">
-            {{ 'Candidate (' ~ interview.candidate_name ~ ')' if turn.role in ('candidate', 'user') else 'Alex (AI Interviewer)' }}
+            {{ 'Candidate (' ~ interview.candidate_name ~ ')' if turn.role in ('candidate', 'user') else 'Shreya (AI Interviewer)' }}
           </div>
           <div style="font-size: 0.875rem; color: var(--text-main); line-height: 1.45;">
             {{ turn.message }}

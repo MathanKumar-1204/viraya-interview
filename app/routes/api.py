@@ -695,7 +695,7 @@ def get_conversation_credentials(interview_id: str):
 
 @api_bp.route("/interviews/<interview_id>/gemini-live/turn", methods=["POST"])
 def gemini_live_turn(interview_id: str):
-    """Processes candidate spoken turn and returns Alex's conversational spoken response using Gemini."""
+    """Processes candidate spoken turn and returns Shreya's conversational spoken response using Gemini."""
     interview = get_or_restore_interview(interview_id)
     if not interview:
         return jsonify({"error": "Interview not found."}), 404
@@ -710,7 +710,7 @@ def gemini_live_turn(interview_id: str):
     print(f"[GeminiLive] Processing candidate turn for interview {interview_id}: '{candidate_message}'")
     service = GeminiLiveService()
     reply = service.process_turn(interview, candidate_message, history)
-    print(f"[GeminiLive] Alex response: '{reply.get('message', '')}'")
+    print(f"[GeminiLive] Shreya response: '{reply.get('message', '')}'")
     return jsonify({"success": True, "turn": reply})
 
 
@@ -746,7 +746,7 @@ def sarvam_turn(interview_id: str):
     """
     Processes candidate spoken turn for Sarvam AI Voice Engine:
     Accepts JSON text payload or multipart audio upload file (transcribed via Sarvam Saaras STT).
-    Generates Alex's reply using the Sarvam prompt (no parroting, natural fillers),
+    Generates Shreya's reply using the Sarvam prompt (no parroting, natural fillers),
     synthesizes speech audio via Sarvam Bulbul TTS, and saves the turns to MongoDB.
     """
     interview = get_or_restore_interview(interview_id)

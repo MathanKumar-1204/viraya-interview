@@ -187,7 +187,7 @@ def test_gemini_live_flow_and_turn(client, prepared_interview):
         assert data["success"] is True
         assert data["voice_engine"] == "gemini_live"
         assert "greeting" in data
-        assert "Alex" in data["greeting"]["message"]
+        assert "Shreya" in data["greeting"]["message"]
 
         # Turn processing endpoint
         turn_res = client.post(

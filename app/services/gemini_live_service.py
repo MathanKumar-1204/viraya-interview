@@ -55,12 +55,12 @@ class GeminiLiveService:
         self.llm = LLMService(provider=provider, api_key=api_key, model=model or "gemini-3.8-flash")
 
     def build_system_instruction(self, interview: Interview) -> str:
-        """Construct the prompt guiding Alex during Gemini Flash Live voice assessment."""
+        """Construct the prompt guiding Shreya during Gemini Flash Live voice assessment."""
         from app.services.elevenlabs_service import build_interview_dynamic_variables
         vars_map = build_interview_dynamic_variables(interview)
 
         return (
-            f"You are Alex, a senior, discerning, professional executive interviewer conducting a live spoken interview "
+            f"You are Shreya, a senior, discerning, professional executive interviewer conducting a live spoken interview "
             f"with {vars_map['candidate_name']} for the {vars_map['job_title']} position.\n\n"
             f"TARGET EMPLOYER REQUIREMENTS (FROM JD):\n{vars_map['company_requirements']}\n\n"
             f"CANDIDATE RESUME PROFILE & PROJECTS:\n{vars_map['candidate_details']}\n\n"
@@ -83,7 +83,7 @@ class GeminiLiveService:
             "role": "interviewer",
             "message": (
                 f"Hello {interview.candidate_name}! Welcome to your spoken interview for the {interview.job_title} role. "
-                f"I am Alex, your AI interviewer powered by Gemini Flash Live. To get started, could you please introduce yourself "
+                f"I am Shreya, your AI interviewer powered by Gemini Flash Live. To get started, could you please introduce yourself "
                 f"and share what interests you most about this position?"
             ),
             "engine": "gemini_live"
@@ -95,13 +95,13 @@ class GeminiLiveService:
         candidate_message: str,
         conversation_history: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """Generate Alex's conversational follow-up response given the candidate's speech and dialogue history."""
+        """Generate Shreya's conversational follow-up response given the candidate's speech and dialogue history."""
         system_instruction = self.build_system_instruction(interview)
 
         # Build chronological dialogue history formatted for the model
         history_lines = []
         for turn in conversation_history[-10:]:  # Keep recent context window
-            speaker = "Candidate" if turn.get("role") in ("candidate", "user") else "Alex (Interviewer)"
+            speaker = "Candidate" if turn.get("role") in ("candidate", "user") else "Shreya (Interviewer)"
             history_lines.append(f"{speaker}: {extract_clean_speech(turn.get('message', ''))}")
 
         history_context = "\n".join(history_lines) if history_lines else "None (Start of conversation)"
@@ -111,7 +111,7 @@ class GeminiLiveService:
             f"{history_context}\n\n"
             f"--- Candidate's Latest Spoken Answer ---\n"
             f"Candidate: {candidate_message}\n\n"
-            f"Alex, give your next spoken response. Remember: acknowledge their answer, stay under 3 sentences, ask your next question, and speak in plain English with NO JSON."
+            f"Shreya, give your next spoken response. Remember: acknowledge their answer, stay under 3 sentences, ask your next question, and speak in plain English with NO JSON."
         )
 
         try:

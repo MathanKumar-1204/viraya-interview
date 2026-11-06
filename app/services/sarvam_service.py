@@ -81,7 +81,7 @@ class SarvamService:
 
         if not template:
             template = (
-                "You are Alex, an elite, professional, and discerning executive interviewer conducting a live spoken evaluation "
+                "You are Shreya, an elite, professional, and discerning executive interviewer conducting a live spoken evaluation "
                 "with {{candidate_name}} for the {{job_title}} position.\n\n"
                 "TARGET ROLE & CANDIDATE CONTEXT:\n"
                 "- Candidate Name: {{candidate_name}}\n"
@@ -109,7 +109,7 @@ class SarvamService:
         
         greeting_text = (
             f"Hello {candidate_name}! Welcome to your interview for the {job_title} position. "
-            f"I am Alex, your interviewer today. To get started, could you please explain a bit about yourself and walk me through your CV?"
+            f"I am Shreya, your interviewer today. To get started, could you please explain a bit about yourself and walk me through your CV?"
         )
 
         audio_b64 = None
@@ -236,7 +236,7 @@ class SarvamService:
         Processes candidate input turn:
         1. Appends candidate message to interview transcript.
         2. Prompts LLM with tailored Sarvam system prompt (enforcing no repetition + natural fillers).
-        3. Cleans Alex's reply.
+        3. Cleans Shreya's reply.
         4. Synthesizes voice audio via Sarvam TTS.
         5. Persists entire transcript to MongoDB in real time.
         """
@@ -260,31 +260,31 @@ class SarvamService:
         # Build running dialogue context
         history_lines = []
         for turn in transcript[-10:]:
-            r = "Interviewer (Alex)" if turn.get("role") in ("interviewer", "agent", "assistant") else "Candidate"
+            r = "Interviewer (Shreya)" if turn.get("role") in ("interviewer", "agent", "assistant") else "Candidate"
             history_lines.append(f"{r}: {turn.get('message', '')}")
         context_str = "\n".join(history_lines)
 
         user_prompt = (
             f"CONVERSATION HISTORY (Last turns):\n{context_str}\n\n"
             f"The candidate just said: \"{candidate_text}\"\n\n"
-            "INSTRUCTIONS FOR ALEX'S NEXT TURN:\n"
+            "INSTRUCTIONS FOR SHREYA'S NEXT TURN:\n"
             "1. NEVER repeat, rephrase, or parrot back what the candidate just said.\n"
             "2. Acknowledge naturally with a brief conversational filler if appropriate (\"Hmm, ok.\", \"Got it.\", \"Understood.\", \"Makes sense.\").\n"
             "3. Ask ONE targeted, discerning follow-up question probing for individual ownership, concrete metrics, or domain technical depth.\n"
             "4. Keep your response spoken, concise, and professional (1-2 sentences max).\n"
-            "Respond ONLY with Alex's spoken words:"
+            "Respond ONLY with Shreya's spoken words:"
         )
 
         try:
-            alex_reply = self.llm.generate_text(system_prompt, user_prompt, max_tokens=180, temperature=0.7)
-            alex_clean = self._clean_llm_speech(alex_reply)
+            shreya_reply = self.llm.generate_text(system_prompt, user_prompt, max_tokens=180, temperature=0.7)
+            shreya_clean = self._clean_llm_speech(shreya_reply)
         except Exception as e:
             print(f"[SarvamService] Turn generation notice (fallback engaged): {e}", flush=True)
-            alex_clean = self._get_fallback_question(interview, candidate_text, len(transcript))
+            shreya_clean = self._get_fallback_question(interview, candidate_text, len(transcript))
 
         transcript.append({
             "role": "interviewer",
-            "message": alex_clean,
+            "message": shreya_clean,
             "time_in_call_secs": time_in_call_secs + 2
         })
         interview.transcript = transcript
@@ -293,7 +293,7 @@ class SarvamService:
         audio_b64 = None
         if self.is_configured():
             try:
-                audio_b64 = self.synthesize_speech(alex_clean)
+                audio_b64 = self.synthesize_speech(shreya_clean)
             except Exception as te:
                 print(f"[SarvamService] TTS synthesis warning: {te}", flush=True)
 
@@ -301,7 +301,7 @@ class SarvamService:
         self._persist_to_mongo(interview)
 
         return {
-            "response_text": alex_clean,
+            "response_text": shreya_clean,
             "audio_base64": audio_b64,
             "transcript": transcript,
             "turn_count": len(transcript)
@@ -353,11 +353,11 @@ class SarvamService:
 
     @staticmethod
     def _clean_llm_speech(raw: str) -> str:
-        """Strip markdown, json artifacts, and prefix labels like 'Alex:'."""
+        """Strip markdown, json artifacts, and prefix labels like 'Shreya:' or 'Alex:'."""
         cleaned = raw.strip()
 
-        # 1. Strip common prefixes like 'Alex:', 'Interviewer:', 'Response:'
-        for prefix in ("Alex:", "Interviewer:", "AI:", "Response:"):
+        # 1. Strip common prefixes like 'Shreya:', 'Alex:', 'Interviewer:', 'Response:'
+        for prefix in ("Shreya:", "Alex:", "Interviewer:", "AI:", "Response:"):
             if cleaned.lower().startswith(prefix.lower()):
                 cleaned = cleaned[len(prefix):].strip()
 

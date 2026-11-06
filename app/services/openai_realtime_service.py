@@ -37,12 +37,12 @@ class OpenAIRealtimeService:
         return bool(self.api_key and not self.api_key.startswith("your_") and not self.api_key.startswith("AIza"))
 
     def build_system_instruction(self, interview: Interview) -> str:
-        """Construct the prompt guiding Alex during OpenAI Realtime voice interview."""
+        """Construct the prompt guiding Shreya during OpenAI Realtime voice interview."""
         from app.services.elevenlabs_service import build_interview_dynamic_variables
         vars_map = build_interview_dynamic_variables(interview)
 
         return (
-            f"You are Alex, a senior, discerning, professional executive interviewer conducting a live spoken interview "
+            f"You are Shreya, a senior, discerning, professional executive interviewer conducting a live spoken interview "
             f"with {vars_map['candidate_name']} for the {vars_map['job_title']} role.\n\n"
             f"TARGET EMPLOYER REQUIREMENTS (FROM JD):\n{vars_map['company_requirements']}\n\n"
             f"CANDIDATE RESUME PROFILE & PROJECTS:\n{vars_map['candidate_details']}\n\n"

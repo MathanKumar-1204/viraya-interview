@@ -132,12 +132,12 @@ Skills: Copywriting, SEO, Google Analytics, WordPress, Editorial Strategy, Brand
         transcript=[
             {
                 "role": "interviewer",
-                "message": "Welcome Maya! I'm Alex, your AI interviewer. To kick off our conversation, could you walk me through your process for developing a quarterly editorial calendar?",
+                "message": "Welcome Maya! I'm Shreya, your AI interviewer. To kick off our conversation, could you walk me through your process for developing a quarterly editorial calendar?",
                 "time_in_call_secs": 12
             },
             {
                 "role": "candidate",
-                "message": "Thanks Alex. I always start by auditing our previous quarter's top performers and interviewing our customer support and sales teams to uncover recurring pain points. Then, I map out core monthly themes and balance high-intent search queries with thought leadership pieces in a central Notion calendar.",
+                "message": "Thanks Shreya. I always start by auditing our previous quarter's top performers and interviewing our customer support and sales teams to uncover recurring pain points. Then, I map out core monthly themes and balance high-intent search queries with thought leadership pieces in a central Notion calendar.",
                 "time_in_call_secs": 42
             },
             {

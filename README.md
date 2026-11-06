@@ -178,12 +178,12 @@ To conduct live spoken voice calls with candidates, create a conversational agen
 ### Step 1: Create the Agent
 1. Navigate to the [ElevenLabs Conversational AI Dashboard](https://elevenlabs.io/app/conversational-ai).
 2. Click **Create Agent** (choose a blank template or standard conversational model).
-3. Name your agent (e.g., **"Alex - AI Interviewer"**).
+3. Name your agent (e.g., **"Shreya - AI Interviewer"**).
 
 ### Step 2: Configure the System Prompt & Persona
 1. In the agent configuration screen, copy the prompt guidelines from **`app/prompts/interviewer.txt`** into the agent's **First Message** and **System Prompt**:
    - **First Message**:
-     > *"Hello! I'm Alex, your AI interviewer today. Thank you for joining. To get started, could you briefly introduce yourself and what drew you to this role?"*
+     > *"Hello! I'm Shreya, your AI interviewer today. Thank you for joining. To get started, could you briefly introduce yourself and what drew you to this role?"*
    - **System Prompt**: Paste the instructions from `app/prompts/interviewer.txt`.
 2. Select a natural, conversational voice (e.g., *Chris*, *Rachel*, *Daniel*, or *Jessica*).
 

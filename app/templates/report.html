@@ -199,7 +199,7 @@
           {% for turn in interview.transcript %}
             <div class="transcript-message {% if turn.role in ('interviewer', 'agent') %}interviewer{% else %}candidate{% endif %}">
               <div class="message-role">
-                {% if turn.role in ('interviewer', 'agent') %}Alex (Viraya AI Interviewer){% else %}{{ interview.candidate_name }}{% endif %}
+                {% if turn.role in ('interviewer', 'agent') %}Shreya (Viraya AI Interviewer){% else %}{{ interview.candidate_name }}{% endif %}
               </div>
               <div>{{ turn.message }}</div>
             </div>

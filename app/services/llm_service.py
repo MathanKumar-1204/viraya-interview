@@ -521,7 +521,7 @@ class LLMService:
                         "questions": [
                             {
                                 "id": "q_intro_1",
-                                "question_text": "Welcome! I'm Alex, your AI interviewer today. To get us started, could you briefly introduce yourself and what drew you to this Content Creator role?",
+                                "question_text": "Welcome! I'm Shreya, your AI interviewer today. To get us started, could you briefly introduce yourself and what drew you to this Content Creator role?",
                                 "competency_id": "writing_quality",
                                 "expected_evidence": "Clear communication, career trajectory, enthusiasm for the position.",
                                 "follow_up_guidance": "If brief, ask what specific aspect of content creation energizes them most."
